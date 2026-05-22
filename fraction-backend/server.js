@@ -9,7 +9,7 @@ const artworkRoutes = require('./routes/artworkRoutes')
 
 const app = express()
 
-app.use(cors({origin: 'https://fraction-chi.vercel.app/'}))
+app.use(cors({origin: 'https://fraction-chi.vercel.app'}))
 app.use(express.json())
 app.use('/api/users', userRoutes)
 app.use('/api/artworks', artworkRoutes)
