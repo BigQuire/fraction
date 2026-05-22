@@ -1,0 +1,153 @@
+const express = require('express')
+const router = express.Router()
+
+const multer = require('multer')
+
+const Artwork = require('../models/Artwork')
+const User = require('../models/User')
+
+const storage = multer.diskStorage({
+
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/')
+  },
+
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + '-' + file.originalname)
+  },
+
+})
+
+router.get('/', async (req, res) => {
+  try {
+    const artworks = await Artwork.find()
+    res.status(200).json(artworks)
+  } catch (error) {
+    res.status(500).json({
+      error: error.message,
+    })
+  }
+})
+
+const upload = multer({ storage })
+
+router.post(
+  '/upload',
+  upload.single('image'),
+
+  async (req, res) => {
+
+    try {
+
+      console.log(req.file)
+      console.log(req.body)
+      const {title, artist, description, price, saleType,} = req.body
+
+      const artwork = new Artwork({title, artist, description, price, saleType, imageUrl: req.file.filename,})
+
+      await artwork.save()
+      res.status(201).json({
+        message: 'Artwork uploaded successfully',
+        artwork,
+      })
+    } catch (error) {
+      res.status(500).json({
+        error: error.message,
+      })
+    }
+  }
+)
+
+router.get('/:id', async (req, res) => {
+  try {
+    const artwork = await Artwork.findById(req.params.id)
+    res.status(200).json(artwork)
+  } catch (error) {
+    res.status(500).json({
+      error: error.message,
+    })
+  }
+})
+
+module.exports = router
+
+router.get('/artist/:artist', async (req, res) => {
+  try {
+    const artworks = await Artwork.find({
+      artist: req.params.artist,
+    })
+    res.status(200).json(artworks)
+  } catch (error) {
+    res.status(500).json({
+      error: error.message,
+    })
+  }
+})
+
+router.delete('/:id', async (req, res) => {
+  try {
+    await Artwork.findByIdAndDelete(req.params.id)
+    res.status(200).json({
+      message: 'Artwork deleted successfully',
+    })
+  } catch (error) {
+    res.status(500).json({
+      error: error.message,
+    })
+  }
+})
+
+router.put('/:id', async (req, res) => {
+  try {
+    const updatedArtwork =
+      await Artwork.findByIdAndUpdate(
+        req.params.id,
+        req.body,
+        { new: true }
+      )
+    res.status(200).json(updatedArtwork)
+  } catch (error) {
+    res.status(500).json({
+      error: error.message,
+    })
+  }
+})
+
+router.put('/:id/bid', async (req, res) => {
+  try {
+    const { username, bidAmount } = req.body
+    const artwork = await Artwork.findById(
+      req.params.id
+    )
+    const user = await User.findOne({
+      username,
+    })
+    if (!artwork || !user) {
+      return res.status(404).json({
+        error: 'Artwork or user not found',
+      })
+    }
+
+    // Wallet check
+    if (user.walletBalance < bidAmount) {
+      return res.status(400).json({
+        error: 'Insufficient wallet balance',
+      })
+    }
+
+    // Bid must be higher
+    if (bidAmount <= artwork.currentBid) {
+      return res.status(400).json({
+        error: 'Bid must be higher',
+      })
+    }
+    artwork.currentBid = bidAmount
+    artwork.highestBidder = username
+    await artwork.save()
+    res.status(200).json(artwork)
+  } catch (error) {
+    res.status(500).json({
+      error: error.message,
+    })
+  }
+})

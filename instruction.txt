@@ -1,0 +1,9 @@
+#setup
+open cmd
+npm run dev for both frontend and backend
+
+cd D:\cornelius\Swinburne\Degree\sem5\cos30034\fraction\fraction-backend
+cd D:\cornelius\Swinburne\Degree\sem5\cos30034\fraction\fraction-frontend
+
+open local mongodb
+wait for backend connected to database
