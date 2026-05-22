@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-const API_URL = 'http://192.168.82.1:5173/api/artworks'
+const API_URL = 'https://fraction-backend.onrender.com/api/artworks'
 
 export const getArtworks = async () => {
 

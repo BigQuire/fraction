@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-const API_URL = 'http://192.168.82.1:5173/api/users'
+const API_URL = 'https://fraction-backend.onrender.com/api/users'
 
 export const registerUser = async (userData) => {
 
