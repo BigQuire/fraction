@@ -21,11 +21,11 @@
         <h2 class="text-4xl font-bold mb-8">Register</h2>
 
         <form class="space-y-6">
-          <input v-model="username" type="text" placeholder="Username" class="w-full p-4 rounded-xl bg-black border border-gray-700"/>
+          <input v-model="form.username" type="text" placeholder="Username" class="w-full p-4 rounded-xl bg-black border border-gray-700"/>
 
-          <input v-model="email" type="email" placeholder="Email" class="w-full p-4 rounded-xl bg-black border border-gray-700"/>
+          <input v-model="form.email" type="email" placeholder="Email" class="w-full p-4 rounded-xl bg-black border border-gray-700"/>
 
-          <input v-model="password" type="password" placeholder="Password" class="w-full p-4 rounded-xl bg-black border border-gray-700"/>
+          <input v-model="form.password" type="password" placeholder="Password" class="w-full p-4 rounded-xl bg-black border border-gray-700"/>
 
           <div class="flex flex-col gap-4">
             <router-link to="/dashboard" class="w-full">
