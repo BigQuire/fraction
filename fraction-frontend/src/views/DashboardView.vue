@@ -364,7 +364,7 @@ const handleUploadArtwork = async () => {
       uploadForm.value.saleType
     )
     await fetch(
-      'http://localhost:5000/api/artworks/upload',
+      'https://fraction-hfg4.onrender.com/api/artworks/upload',
       {
         method: 'POST',
         body: formData,

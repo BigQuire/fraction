@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-const API_URL = 'https://fraction-backend.onrender.com/api/artworks'
+const API_URL = 'https://fraction-hfg4.onrender.com/api/artworks'
 
 export const getArtworks = async () => {
 

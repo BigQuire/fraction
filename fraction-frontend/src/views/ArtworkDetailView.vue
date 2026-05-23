@@ -2,7 +2,7 @@
   <div v-if="artwork" class="min-h-screen px-10 py-16">
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-16">
-      <img :src="`https://fraction-backend.onrender.com/uploads/${artwork.imageUrl}`" class="w-full rounded-3xl"/>
+      <img :src="`https://fraction-hfg4.onrender.com/uploads/${artwork.imageUrl}`" class="w-full rounded-3xl"/>
 
       <div>
         <h1 class="text-5xl font-black mb-6">

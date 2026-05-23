@@ -47,7 +47,7 @@
             v-for="artwork in filteredArtworks"
             :key="artwork._id"
 
-            :image="`http://localhost:5000/uploads/${artwork.imageUrl}`"
+            :image="`https://fraction-hfg4.onrender.com/uploads/${artwork.imageUrl}`"
 
             :title="artwork.title"
             :artist="artwork.artist"
