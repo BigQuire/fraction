@@ -46,30 +46,22 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { reactive } from 'vue'
 
 import { registerUser } from '../services/userService'
-import router from '@/router'
 
-const username = ref('')
-const email = ref('')
-const password = ref('')
+const form = reactive({
+  username: '',
+  email: '',
+  password: ''
+})
 
 const handleRegister = async () => {
 
   try {
 
-    const userData = {
-      username: username.value,
-      email: email.value,
-      password: password.value,
-    }
-    
-    console.log({username, email, password})
-    const response = await registerUser(userData)
-
-    alert(response.message)
-
+    console.log(form)
+    const response = await registerUser(form)
     console.log(response)
 
   } catch (error) {
