@@ -72,13 +72,12 @@ const handleRegister = async () => {
     console.log(response)
 
   } catch (error) {
+  console.log(error)
 
-    console.error(error)
-
-    alert('Registration Failed')
-
-  }
-
+  res.status(500).json({
+    message: error.message
+  })
+}
 }
 
 </script>
