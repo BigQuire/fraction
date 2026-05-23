@@ -90,7 +90,7 @@ const bidError = ref(false)
 const handleBid = async () => {
   try { 
     const user = JSON.parse( localStorage.getItem('user') ) 
-    const updatedArtwork = await placeBid( artwork.value._id, user.username, Number(bidAmount.value) ) 
+    const updatedArtwork = await placeBid( artwork.value._id, user?.username, Number(bidAmount.value) ) 
     artwork.value = updatedArtwork 
     bidMessage.value = 'Bid placed successfully' 
     bidError.value = false 

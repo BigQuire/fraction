@@ -345,7 +345,7 @@ const handleUploadArtwork = async () => {
     formData.append('title', uploadForm.value.title)
     formData.append(
       'artist',
-      user.value.username
+      user?.value.username
     )
     formData.append(
       'description',
@@ -371,9 +371,9 @@ const handleUploadArtwork = async () => {
       }
     )
     artworks.value = await getArtistArtworks(
-      user.value.username
+      user?.value.username
     )
-    console.log(user.value.username)
+    console.log(user?.value.username)
     console.log(artworks.value)
 
     showUploadModal.value = false
@@ -412,7 +412,7 @@ onMounted(async() => {
     router.push('/login')
   }
 
-  artworks.value = await getArtistArtworks(user.value.username)
+  artworks.value = await getArtistArtworks(user?.value.username)
 
 })
 
