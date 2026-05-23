@@ -64,7 +64,8 @@ const handleRegister = async () => {
       email: email.value,
       password: password.value,
     }
-
+    
+    console.log({username, email, password})
     const response = await registerUser(userData)
 
     alert(response.message)
