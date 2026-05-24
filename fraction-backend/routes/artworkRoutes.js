@@ -15,13 +15,6 @@ const storage = new CloudinaryStorage({
   cloudinary,
   params: {
     folder: 'fraction-artworks',
-
-    allowed_formats: [
-      'jpg',
-      'png',
-      'jpeg',
-      'webp',
-    ],
   },
 })
 
@@ -53,8 +46,9 @@ router.post(
       const {title, artist, description, price, saleType,} = req.body
 
       const artwork = new Artwork({title, artist, description, price, saleType, imageUrl: req.file.path,})
-
+      console.log(req.file)
       await artwork.save()
+
       res.status(201).json({
         message: 'Artwork uploaded successfully',
         artwork,

@@ -458,6 +458,7 @@ const handleFileChange = (event) => {
 }
 
 const handleUploadArtwork = async () => {
+  console.log(selectedFile.value)
   try {
     const formData = new FormData()
     formData.append('image', selectedFile.value)
