@@ -62,6 +62,8 @@ router.post(
         artwork,
       })
     } catch (error) {
+      console.log(error)
+
       res.status(500).json({
         error: error.message,
       })
@@ -74,6 +76,8 @@ router.get('/:id', async (req, res) => {
     const artwork = await Artwork.findById(req.params.id)
     res.status(200).json(artwork)
   } catch (error) {
+    console.log(error)
+
     res.status(500).json({
       error: error.message,
     })
@@ -89,6 +93,8 @@ router.get('/artist/:artist', async (req, res) => {
     })
     res.status(200).json(artworks)
   } catch (error) {
+    console.log(error)
+
     res.status(500).json({
       error: error.message,
     })
@@ -102,6 +108,7 @@ router.delete('/:id', async (req, res) => {
       message: 'Artwork deleted successfully',
     })
   } catch (error) {
+    console.log(error)
     res.status(500).json({
       error: error.message,
     })
@@ -118,6 +125,7 @@ router.put('/:id', async (req, res) => {
       )
     res.status(200).json(updatedArtwork)
   } catch (error) {
+    console.log(error)
     res.status(500).json({
       error: error.message,
     })
@@ -157,6 +165,7 @@ router.put('/:id/bid', async (req, res) => {
     await artwork.save()
     res.status(200).json(artwork)
   } catch (error) {
+    console.log(error)
     res.status(500).json({
       error: error.message,
     })
