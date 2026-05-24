@@ -177,7 +177,7 @@
 
             :id="artwork._id"
 
-            :image="`https://fraction-hfg4.onrender.com/uploads/${artwork.imageUrl}`"
+            :image="artwork.imageUrl"
 
             :title="artwork.title"
             :artist="artwork.artist"
@@ -210,7 +210,7 @@
 
             :id="artwork._id"
 
-            :image="`https://fraction-hfg4.onrender.com/uploads/${artwork.imageUrl}`"
+            :image="artwork.imageUrl"
 
             :title="artwork.title"
             :artist="artwork.artist"
@@ -268,7 +268,7 @@
 
             :id="artwork._id"
 
-            :image="`https://fraction-hfg4.onrender.com/uploads/${artwork.imageUrl}`"
+            :image="artwork.imageUrl"
 
             :title="artwork.title"
             :artist="artwork.artist"
