@@ -3,11 +3,9 @@ const router = express.Router()
 
 const multer = require('multer')
 
-const { CloudinaryStorage } =
-  require('multer-storage-cloudinary')
+const { CloudinaryStorage } = require('multer-storage-cloudinary')
 
-const cloudinary =
-  require('../config/cloudinary')
+const cloudinary = require('../config/cloudinary')
 
 const Artwork = require('../models/Artwork')
 const User = require('../models/User')
@@ -54,7 +52,7 @@ router.post(
       console.log(req.body)
       const {title, artist, description, price, saleType,} = req.body
 
-      const artwork = new Artwork({title, artist, description, price, saleType, imageUrl: req.file.filename,})
+      const artwork = new Artwork({title, artist, description, price, saleType, imageUrl: req.file.path,})
 
       await artwork.save()
       res.status(201).json({
