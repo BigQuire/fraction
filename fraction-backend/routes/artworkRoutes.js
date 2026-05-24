@@ -40,9 +40,16 @@ router.post(
   async (req, res) => {
 
     try {
-
+      console.log('File:')
       console.log(req.file)
+      console.log('Body:')
       console.log(req.body)
+      if(!req.file){
+        return res.status(400).json({
+          error: 'No file uploaded'
+        })
+      }
+
       const {title, artist, description, price, saleType,} = req.body
 
       const artwork = new Artwork({title, artist, description, price, saleType, imageUrl: req.file.path,})
@@ -54,6 +61,7 @@ router.post(
         artwork,
       })
     } catch (error) {
+      console.log('Upload error:')
       console.log(error)
 
       res.status(500).json({

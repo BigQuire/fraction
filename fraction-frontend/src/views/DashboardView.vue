@@ -483,6 +483,8 @@ const handleUploadArtwork = async () => {
       'saleType',
       uploadForm.value.saleType
     )
+    console.log(selectedFile.value)
+    console.log(formData.get('image'))
     await fetch(
       'https://fraction-hfg4.onrender.com/api/artworks/upload',
       {
