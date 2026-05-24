@@ -34,6 +34,8 @@ router.get('/', async (req, res) => {
     const artworks = await Artwork.find()
     res.status(200).json(artworks)
   } catch (error) {
+    console.log(error)
+
     res.status(500).json({
       error: error.message,
     })
