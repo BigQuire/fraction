@@ -8,38 +8,88 @@
       </h1>
 
       <nav class="flex flex-col gap-4 text-lg">
-        <button class="bg-purple-600 px-4 py-3 rounded-xl text-left font-semibold">
-          Dashboard
-        </button>
 
-        <button class="hover:bg-[#1A1A1A] px-4 py-3 rounded-xl text-left transition">
-          store
-        </button>
+      <button
+        @click="activeSection = 'dashboard'"
+        :class="activeSection === 'dashboard'
+          ? 'bg-purple-600'
+          : 'hover:bg-[#1A1A1A]'"
+        class="px-4 py-3 rounded-xl text-left font-semibold transition"
+      >
+        Dashboard
+      </button>
 
-        <button class="hover:bg-[#1A1A1A] px-4 py-3 rounded-xl text-left transition">
-          My Collection
-        </button>
+      <button
+        @click="activeSection = 'store'"
+        :class="activeSection === 'store'
+          ? 'bg-purple-600'
+          : 'hover:bg-[#1A1A1A]'"
+        class="px-4 py-3 rounded-xl text-left transition"
+      >
+        Store
+      </button>
 
-        <button class="hover:bg-[#1A1A1A] px-4 py-3 rounded-xl text-left transition">
-          My Bids
-        </button>
+      <button
+        @click="activeSection = 'collection'"
+        :class="activeSection === 'collection'
+          ? 'bg-purple-600'
+          : 'hover:bg-[#1A1A1A]'"
+        class="px-4 py-3 rounded-xl text-left transition"
+      >
+        My Collection
+      </button>
 
-        <button class="hover:bg-[#1A1A1A] px-4 py-3 rounded-xl text-left transition">
-          Commissions
-        </button>
+      <button
+        @click="activeSection = 'bids'"
+        :class="activeSection === 'bids'
+          ? 'bg-purple-600'
+          : 'hover:bg-[#1A1A1A]'"
+        class="px-4 py-3 rounded-xl text-left transition"
+      >
+        My Bids
+      </button>
 
-        <button class="hover:bg-[#1A1A1A] px-4 py-3 rounded-xl text-left transition">
-          Wishlist
-        </button>
+      <button
+        @click="activeSection = 'commissions'"
+        :class="activeSection === 'commissions'
+          ? 'bg-purple-600'
+          : 'hover:bg-[#1A1A1A]'"
+        class="px-4 py-3 rounded-xl text-left transition"
+      >
+        Commissions
+      </button>
 
-        <button class="hover:bg-[#1A1A1A] px-4 py-3 rounded-xl text-left transition">
-          Profile
-        </button>
+      <button
+        @click="activeSection = 'wishlist'"
+        :class="activeSection === 'wishlist'
+          ? 'bg-purple-600'
+          : 'hover:bg-[#1A1A1A]'"
+        class="px-4 py-3 rounded-xl text-left transition"
+      >
+        Wishlist
+      </button>
 
-        <button class="hover:bg-[#1A1A1A] px-4 py-3 rounded-xl text-left transition">
-          Settings
-        </button>
-      </nav>
+      <button
+        @click="activeSection = 'profile'"
+        :class="activeSection === 'profile'
+          ? 'bg-purple-600'
+          : 'hover:bg-[#1A1A1A]'"
+        class="px-4 py-3 rounded-xl text-left transition"
+      >
+        Profile
+      </button>
+
+      <button
+        @click="activeSection = 'settings'"
+        :class="activeSection === 'settings'
+          ? 'bg-purple-600'
+          : 'hover:bg-[#1A1A1A]'"
+        class="px-4 py-3 rounded-xl text-left transition"
+      >
+        Settings
+      </button>
+
+    </nav>
 
       <div class="mt-auto">
         <button @click="handleLogout" class="w-full bg-red-600 hover:bg-red-700 py-3 rounded-xl font-semibold transition">
@@ -310,10 +360,12 @@ import ArtworkCard from '../components/ArtworkCard.vue'
 
 const router = useRouter()
 const user = ref(null)
+const activeSection = ref('dashboard')
 const artworks = ref([])
 const editingArtwork = ref(null)
 const showUploadModal = ref(false)
 const selectedFile = ref(null)
+
 
 const handleDelete = async (id) => {
   try {
