@@ -29,8 +29,11 @@ export const deleteArtwork = async (id) => {
 
 export const updateArtwork = async (id, updatedData) => {
 
-  const response = await axios.put(`${API_URL}/${id}`, updatedData)
-  return response.data
+  const response = await fetch( `https://fraction-hfg4.onrender.com/api/artworks/${id}`, 
+    { method: 'PUT', headers:  { 'Content-Type': 'application/json', }, 
+      body: JSON.stringify(artworkData), 
+  }) 
+  return await response.json()
 }
 
 export const placeBid = async (id, username, bidAmount) => {

@@ -421,7 +421,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { getArtistArtworks, deleteArtwork, } from '../services/artworkService'
+import { getArtistArtworks, deleteArtwork, updateArtwork } from '../services/artworkService'
 import ArtworkCard from '../components/ArtworkCard.vue'
 
 
