@@ -3,20 +3,31 @@ const router = express.Router()
 
 const multer = require('multer')
 
+const { CloudinaryStorage } =
+  require('multer-storage-cloudinary')
+
+const cloudinary =
+  require('../config/cloudinary')
+
 const Artwork = require('../models/Artwork')
 const User = require('../models/User')
 
-const storage = multer.diskStorage({
+const storage = new CloudinaryStorage({
 
-  destination: (req, file, cb) => {
-    cb(null, 'uploads/')
+  cloudinary,
+  params: {
+    folder: 'fraction-artworks',
+
+    allowed_formats: [
+      'jpg',
+      'png',
+      'jpeg',
+      'webp',
+    ],
   },
-
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + '-' + file.originalname)
-  },
-
 })
+
+const upload = multer({ storage })
 
 router.get('/', async (req, res) => {
   try {
@@ -28,8 +39,6 @@ router.get('/', async (req, res) => {
     })
   }
 })
-
-const upload = multer({ storage })
 
 router.post(
   '/upload',
