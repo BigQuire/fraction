@@ -9,87 +9,95 @@
 
       <nav class="flex flex-col gap-4 text-lg">
 
-      <button
-        @click="activeSection = 'dashboard'"
-        :class="activeSection === 'dashboard'
-          ? 'bg-purple-600'
-          : 'hover:bg-[#1A1A1A]'"
-        class="px-4 py-3 rounded-xl text-left font-semibold transition"
-      >
-        Dashboard
-      </button>
+        <!---dashboard--->
+        <button
+          @click="activeSection = 'dashboard'"
+          :class="activeSection === 'dashboard'
+            ? 'bg-purple-600'
+            : 'hover:bg-[#1A1A1A]'"
+          class="px-4 py-3 rounded-xl text-left font-semibold transition"
+        >
+          Dashboard
+        </button>
 
-      <button
-        @click="activeSection = 'store'"
-        :class="activeSection === 'store'
-          ? 'bg-purple-600'
-          : 'hover:bg-[#1A1A1A]'"
-        class="px-4 py-3 rounded-xl text-left transition"
-      >
-        Store
-      </button>
+        <!---store--->
+        <button
+          @click="activeSection = 'store'"
+          :class="activeSection === 'store'
+            ? 'bg-purple-600'
+            : 'hover:bg-[#1A1A1A]'"
+          class="px-4 py-3 rounded-xl text-left transition"
+        >
+          Store
+        </button>
 
-      <button
-        @click="activeSection = 'collection'"
-        :class="activeSection === 'collection'
-          ? 'bg-purple-600'
-          : 'hover:bg-[#1A1A1A]'"
-        class="px-4 py-3 rounded-xl text-left transition"
-      >
-        My Collection
-      </button>
+        <!---collection--->
+        <button
+          @click="activeSection = 'collection'"
+          :class="activeSection === 'collection'
+            ? 'bg-purple-600'
+            : 'hover:bg-[#1A1A1A]'"
+          class="px-4 py-3 rounded-xl text-left transition"
+        >
+          My Collection
+        </button>
 
-      <button
-        @click="activeSection = 'bids'"
-        :class="activeSection === 'bids'
-          ? 'bg-purple-600'
-          : 'hover:bg-[#1A1A1A]'"
-        class="px-4 py-3 rounded-xl text-left transition"
-      >
-        My Bids
-      </button>
+        <!---bids--->
+        <button
+          @click="activeSection = 'bids'"
+          :class="activeSection === 'bids'
+            ? 'bg-purple-600'
+            : 'hover:bg-[#1A1A1A]'"
+          class="px-4 py-3 rounded-xl text-left transition"
+        >
+          My Bids
+        </button>
 
-      <button
-        @click="activeSection = 'commissions'"
-        :class="activeSection === 'commissions'
-          ? 'bg-purple-600'
-          : 'hover:bg-[#1A1A1A]'"
-        class="px-4 py-3 rounded-xl text-left transition"
-      >
-        Commissions
-      </button>
+        <!---commissions--->
+        <button
+          @click="activeSection = 'commissions'"
+          :class="activeSection === 'commissions'
+            ? 'bg-purple-600'
+            : 'hover:bg-[#1A1A1A]'"
+          class="px-4 py-3 rounded-xl text-left transition"
+        >
+          Commissions
+        </button>
 
-      <button
-        @click="activeSection = 'wishlist'"
-        :class="activeSection === 'wishlist'
-          ? 'bg-purple-600'
-          : 'hover:bg-[#1A1A1A]'"
-        class="px-4 py-3 rounded-xl text-left transition"
-      >
-        Wishlist
-      </button>
+        <!---wishlist--->
+        <button
+          @click="activeSection = 'wishlist'"
+          :class="activeSection === 'wishlist'
+            ? 'bg-purple-600'
+            : 'hover:bg-[#1A1A1A]'"
+          class="px-4 py-3 rounded-xl text-left transition"
+        >
+          Wishlist
+        </button>
 
-      <button
-        @click="activeSection = 'profile'"
-        :class="activeSection === 'profile'
-          ? 'bg-purple-600'
-          : 'hover:bg-[#1A1A1A]'"
-        class="px-4 py-3 rounded-xl text-left transition"
-      >
-        Profile
-      </button>
+        <!---profile--->
+        <button
+          @click="activeSection = 'profile'"
+          :class="activeSection === 'profile'
+            ? 'bg-purple-600'
+            : 'hover:bg-[#1A1A1A]'"
+          class="px-4 py-3 rounded-xl text-left transition"
+        >
+          Profile
+        </button>
 
-      <button
-        @click="activeSection = 'settings'"
-        :class="activeSection === 'settings'
-          ? 'bg-purple-600'
-          : 'hover:bg-[#1A1A1A]'"
-        class="px-4 py-3 rounded-xl text-left transition"
-      >
-        Settings
-      </button>
+        <!---settings--->
+        <button
+          @click="activeSection = 'settings'"
+          :class="activeSection === 'settings'
+            ? 'bg-purple-600'
+            : 'hover:bg-[#1A1A1A]'"
+          class="px-4 py-3 rounded-xl text-left transition"
+        >
+          Settings
+        </button>
 
-    </nav>
+      </nav>
 
       <div class="mt-auto">
         <button @click="handleLogout" class="w-full bg-red-600 hover:bg-red-700 py-3 rounded-xl font-semibold transition">
@@ -99,31 +107,29 @@
     </aside>
 
     <!-- Main Content -->
-    <main class="flex-1 p-8 overflow-y-auto">
+    <section v-if="activeSection === 'dashboard'">
+      <main class="flex-1 p-8 overflow-y-auto">
 
-      <!-- Header -->
-      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-6 mb-10">
-        <div>
-          <h1 class="text-5xl font-bold mb-3">
-            Welcome Back, {{ user?.username }}
-          </h1>
-        </div>
-
-        <div class="flex items-center gap-4 bg-[#1A1A1A] border border-gray-800 p-4 rounded-2xl">
-          <img
-            src=""
-            class="w-16 h-16 rounded-full object-cover"
-          />
-
+        <!-- Header -->
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-6 mb-10">
           <div>
-            <p class="font-bold text-lg">{{ user?.username }}</p>
-            <p class="text-gray-400">{{ user?.role }}</p>
+            <h1 class="text-5xl font-bold mb-3">
+              Welcome Back, {{ user?.username }}
+            </h1>
+          </div>
+
+          <div class="flex items-center gap-4 bg-[#1A1A1A] border border-gray-800 p-4 rounded-2xl">
+            <img
+              src=""
+              class="w-16 h-16 rounded-full object-cover"
+            />
+
+            <div>
+              <p class="font-bold text-lg">{{ user?.username }}</p>
+              <p class="text-gray-400">{{ user?.role }}</p>
+            </div>
           </div>
         </div>
-      </div>
-
-      <!-- Statistics -->
-      <section class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-12">
 
         <div class="bg-[#1A1A1A] border border-gray-800 rounded-3xl p-6 shadow-2xl">
           <p class="text-gray-400 mb-3">Wallet Balance</p>
@@ -152,85 +158,145 @@
             {{ user?.ownedArtworks }}
           </h2>
         </div>
-      </section>
+      </main>
+    </section>
 
-      <!-- My Uploaded Artworks -->
-      <section class="mb-16">
-        <div class="flex items-center justify-between mb-10">
-          <h2 class="text-4xl font-bold">
-            My Uploaded Artworks
-          </h2>
+    <!---stores--->
+    <section v-if="activeSection === 'store'" class="mb-16">
+      <h2 class="text-4xl font-bold mb-10">
+        Store
+      </h2>
 
-          <button @click="showUploadModal = true" class="bg-purple-600 hover:bg-purple-700 px-6 py-3 rounded-2xl font-semibold">
-            Upload Artwork
-          </button>
-        </div>
-
-        <div v-if="artworks.length > 0" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
-          <div
-            v-for="artwork in artworks"
-            :key="artwork._id"
-            class="relative"
-          >
-            <ArtworkCard
-
-              :id="artwork._id"
-
-              :image="`http://localhost:5000/uploads/${artwork.imageUrl}`"
-
-              :title="artwork.title"
-              :artist="artwork.artist"
-              :price="artwork.price"
-              :saleType="artwork.saleType"
-            />
-
-            <div class="absolute top-4 right-4 flex gap-2 z-50">
-              <button
-                @click="handleDelete(artwork._id)"
-                class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-xl text-sm font-semibold"
-              >
-                Delete
-              </button>
-
-              <button
-                @click="openEditModal(artwork)"
-                class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-xl text-sm font-semibold"
-              >
-                Edit
-              </button>
-
-              <button 
-                @click="startAuction(artwork)" 
-                class="bg-yellow-500 hover:bg-yellow-600 px-4 py-2 rounded-xl text-sm font-semibold" 
-              > 
-                Start Bid 
-              </button>
-            </div>
-          </div>
-        </div>
-
+      <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
         <div
-          v-else
-          class="bg-[#1A1A1A] border border-gray-800 rounded-3xl p-10 text-center text-gray-400"
+          v-for="artwork in artworks"
+          :key="artwork._id"
+          class="relative"
         >
-          No artworks uploaded yet.
+          <ArtworkCard
+
+            :id="artwork._id"
+
+            :image="`https://fraction-hfg4.onrender.com/uploads/${artwork.imageUrl}`"
+
+            :title="artwork.title"
+            :artist="artwork.artist"
+            :price="artwork.price"
+            :saleType="artwork.saleType"
+          />
         </div>
+      </div>
+    </section>
 
-      </section>
-
-      <!-- Active Bids -->
-      <section class="mb-12">
-        <h2 class="text-4xl font-bold mb-8">
-          Active Bids
+    <!-- My Uploaded Artworks -->
+    <section v-if="activeSection === 'collection'" class="mb-16">
+      <div class="flex items-center justify-between mb-10">
+        <h2 class="text-4xl font-bold">
+          My Uploaded Artworks
         </h2>
 
-        <div class="grid grid-cols-1 xl:grid-cols-2 gap-8">
+        <button @click="showUploadModal = true" class="bg-purple-600 hover:bg-purple-700 px-6 py-3 rounded-2xl font-semibold">
+          Upload Artwork
+        </button>
+      </div>
 
+      <div v-if="artworks.length > 0" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+        <div
+          v-for="artwork in artworks"
+          :key="artwork._id"
+          class="relative"
+        >
+          <ArtworkCard
 
+            :id="artwork._id"
+
+            :image="`https://fraction-hfg4.onrender.com/uploads/${artwork.imageUrl}`"
+
+            :title="artwork.title"
+            :artist="artwork.artist"
+            :price="artwork.price"
+            :saleType="artwork.saleType"
+          />
+
+          <div class="absolute top-4 right-4 flex gap-2 z-50">
+            <button
+              @click="handleDelete(artwork._id)"
+              class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-xl text-sm font-semibold"
+            >
+              Delete
+            </button>
+
+            <button
+              @click="openEditModal(artwork)"
+              class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-xl text-sm font-semibold"
+            >
+              Edit
+            </button>
+
+            <button 
+              @click="startAuction(artwork)" 
+              class="bg-yellow-500 hover:bg-yellow-600 px-4 py-2 rounded-xl text-sm font-semibold" 
+            > 
+              Start Bid 
+            </button>
+          </div>
         </div>
-      </section>
-    </main>
+      </div>
+
+      <div
+        v-else
+        class="bg-[#1A1A1A] border border-gray-800 rounded-3xl p-10 text-center text-gray-400"
+      >
+        No artworks uploaded yet.
+      </div>
+
+    </section>
+
+    <!-- Active Bids -->
+    <section v-if="activeSection === 'bids'" class="mb-12">
+      <h2 class="text-4xl font-bold mb-8">
+        Active Bids
+      </h2>
+
+      <div class="grid grid-cols-1 xl:grid-cols-2 gap-8">
+        <div
+          v-for="artwork in artworks.filter(a => a.saleType === 'bid')"
+          :key="artwork._id"
+          class="relative"
+        >
+          <ArtworkCard
+
+            :id="artwork._id"
+
+            :image="`https://fraction-hfg4.onrender.com/uploads/${artwork.imageUrl}`"
+
+            :title="artwork.title"
+            :artist="artwork.artist"
+            :price="artwork.price"
+            :saleType="artwork.saleType"
+          />
+
+          <div class="absolute top-4 right-4 flex gap-2 z-50">
+            <button
+              @click="handleDelete(artwork._id)"
+              class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-xl text-sm font-semibold"
+            >
+              Delete
+            </button>
+
+            <button
+              @click="openEditModal(artwork)"
+              class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-xl text-sm font-semibold"
+            >
+              Edit
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
   </div>
+
+  <!-- Edit Artwork Modal -->
   <div
     v-if="editingArtwork"
     class="fixed inset-0 bg-black/70 flex items-center justify-center z-50"
@@ -286,6 +352,7 @@
     </div>
   </div>
 
+  <!-- Upload Artwork Modal -->
   <div v-if="showUploadModal" class="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
     <div class="bg-[#111111] w-full max-w-2xl p-8 rounded-3xl">
       <h2 class="text-3xl font-bold mb-8">
