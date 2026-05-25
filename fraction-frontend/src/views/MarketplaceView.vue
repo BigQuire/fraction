@@ -125,6 +125,14 @@ onMounted(async () => {
 
 const displayPrice = (artwork) => artwork.currentBid || artwork.price
 
+const isMarketplaceListing = (artwork) => {
+  const listedSaleTypes = ['sale', 'bid', 'both']
+  const cooldownActive =
+    artwork.resaleAvailableAt && new Date(artwork.resaleAvailableAt) > new Date()
+
+  return listedSaleTypes.includes(artwork.saleType) && !cooldownActive
+}
+
 const resetFilters = () => {
   searchQuery.value = ''
   selectedType.value = 'all'
@@ -134,7 +142,7 @@ const resetFilters = () => {
 }
 
 const filteredArtworks = computed(() => {
-  let filtered = [...artworks.value]
+  let filtered = artworks.value.filter(isMarketplaceListing)
 
   if (searchQuery.value) {
     filtered = filtered.filter((artwork) =>
