@@ -11,10 +11,12 @@ const Artwork = require('../models/Artwork')
 const User = require('../models/User')
 
 const storage = new CloudinaryStorage({
-
   cloudinary,
-  params: {
-    folder: 'fraction-artworks',
+  params: async (req, file) => {
+    return {
+      folder: 'fraction-artworks',
+      resource_type: 'image',
+    }
   },
 })
 
@@ -83,8 +85,6 @@ router.get('/:id', async (req, res) => {
     })
   }
 })
-
-module.exports = router
 
 router.get('/artist/:artist', async (req, res) => {
   try {
@@ -171,3 +171,5 @@ router.put('/:id/bid', async (req, res) => {
     })
   }
 })
+
+module.exports = router
