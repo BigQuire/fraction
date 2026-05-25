@@ -34,6 +34,12 @@ export const updateUserSettings = async (username, settings) => {
   return response.data
 }
 
+export const addWalletBalance = async (username, amount) => {
+
+  const response = await axios.put(`${API_URL}/${username}/wallet`, { amount })
+  return response.data
+}
+
 export const updateUserProfile = async (username, profile) => {
 
   const response = await axios.put(`${API_URL}/${username}/profile`, profile)

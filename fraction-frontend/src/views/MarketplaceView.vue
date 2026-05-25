@@ -53,7 +53,7 @@
             <label class="block">
               <span class="mb-2 flex items-center justify-between text-sm font-semibold text-neutral-300">
                 <span>Max Price</span>
-                <span class="text-amber-200">{{ formatMoney(maxPrice, settings.currency) }}</span>
+                <span class="text-amber-200">{{ formatCredits(maxPrice) }}</span>
               </span>
               <input v-model.number="maxPrice" type="range" min="0" max="10000" step="100" class="w-full accent-amber-200" />
             </label>
@@ -82,7 +82,6 @@
               :title="artwork.title"
               :artist="artwork.artist"
               :price="displayPrice(artwork)"
-              :currency="settings.currency"
               :saleType="artwork.saleType"
               :id="artwork._id"
             />
@@ -104,7 +103,7 @@ import { ref, onMounted, computed } from 'vue'
 
 import { getArtworks } from '../services/artworkService'
 import { getArtworkImageUrl } from '../utils/artworkImage'
-import { categories, formatMoney, getStoredSettings } from '../utils/preferences'
+import { categories, formatCredits } from '../utils/preferences'
 
 const artworks = ref([])
 const searchQuery = ref('')
@@ -113,7 +112,6 @@ const selectedCategory = ref('all')
 const sortOption = ref('default')
 const maxPrice = ref(10000)
 const isLoading = ref(true)
-const settings = ref(getStoredSettings())
 
 onMounted(async () => {
   try {

@@ -58,6 +58,35 @@
           </div>
 
           <div class="glass-panel rounded-2xl p-6">
+            <div class="grid gap-5 lg:grid-cols-[1fr_360px] lg:items-end">
+              <div>
+                <p class="text-sm font-bold uppercase tracking-[0.28em] text-amber-200">Demo Wallet</p>
+                <h2 class="mt-2 text-2xl font-black text-white">Add Fraction Credits</h2>
+                <p class="mt-2 text-neutral-400">
+                  Use this simulated top-up to demo purchases, bids, and auto bids without a payment gateway.
+                </p>
+              </div>
+              <form class="flex flex-col gap-3 sm:flex-row" @submit.prevent="handleAddBalance">
+                <input
+                  v-model.number="balanceAmount"
+                  type="number"
+                  min="1"
+                  class="field"
+                  placeholder="Amount in FRC"
+                />
+                <button class="premium-button shrink-0" type="submit">Add Balance</button>
+              </form>
+            </div>
+            <p
+              v-if="balanceMessage"
+              class="mt-4 text-sm font-semibold"
+              :class="balanceError ? 'text-rose-300' : 'text-emerald-300'"
+            >
+              {{ balanceMessage }}
+            </p>
+          </div>
+
+          <div class="glass-panel rounded-2xl p-6">
             <div class="mb-5 flex items-center justify-between">
               <h2 class="text-2xl font-black text-white">Recent Uploads</h2>
               <button class="text-sm font-bold text-amber-200" @click="activeSection = 'collection'">Manage</button>
@@ -148,7 +177,7 @@
             </div>
             <div>
               <p class="text-sm text-neutral-500">Wallet Balance</p>
-              <p class="mt-2 text-xl font-black text-amber-200">{{ formatMoney(user?.walletBalance || 0, settings.currency) }}</p>
+              <p class="mt-2 text-xl font-black text-amber-200">{{ formatCredits(user?.walletBalance || 0) }}</p>
             </div>
             <div>
               <p class="text-sm text-neutral-500">Uploaded Artworks</p>
@@ -169,7 +198,7 @@
                 </div>
                 <div class="min-w-44 rounded-2xl border border-white/10 bg-white/5 p-4">
                   <p class="text-sm text-neutral-500">Budget</p>
-                  <p class="text-xl font-black text-white">{{ formatMoney(commission.budget, commission.currency || settings.currency) }}</p>
+                  <p class="text-xl font-black text-white">{{ formatCredits(commission.budget) }}</p>
                   <p class="mt-3 text-sm text-neutral-500">Deadline</p>
                   <p class="text-sm font-semibold text-neutral-300">{{ formatDate(commission.deadline) }}</p>
                 </div>
@@ -236,18 +265,10 @@
                 </select>
               </label>
 
-              <label class="block">
-                <span class="mb-2 block text-sm font-semibold text-neutral-300">Currency</span>
-                <select v-model="settings.currency" class="field">
-                  <option v-for="currency in currencies" :key="currency.code" :value="currency.code">
-                    {{ currency.code }} - {{ currency.label }}
-                  </option>
-                </select>
-              </label>
             </div>
 
             <p class="text-sm text-neutral-400">
-              Currency affects display values across marketplace, artwork, wishlist, and dashboard views.
+              Fraction uses platform credits for all purchases, bids, commissions, and demo wallet balances.
             </p>
 
             <p v-if="settingsMessage" class="text-sm font-semibold text-emerald-300">{{ settingsMessage }}</p>
@@ -339,14 +360,13 @@ import { computed, defineComponent, h, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { deleteArtwork, getOwnerArtworks, updateArtwork, uploadArtwork } from '../services/artworkService'
 import { getArtistCommissions, updateCommissionStatus } from '../services/commissionService'
-import { getUserProfile, updateUserProfile, updateUserSettings } from '../services/userService'
+import { addWalletBalance, getUserProfile, updateUserProfile, updateUserSettings } from '../services/userService'
 import ArtworkCard from '../components/ArtworkCard.vue'
 import { getArtworkImageUrl } from '../utils/artworkImage'
 import {
   applyTheme,
   categories,
-  currencies,
-  formatMoney,
+  formatCredits,
   getStoredSettings,
   languages,
   regions,
@@ -428,6 +448,9 @@ const settingsMessage = ref('')
 const profileMessage = ref('')
 const actionMessage = ref('')
 const actionError = ref(false)
+const balanceAmount = ref(1000)
+const balanceMessage = ref('')
+const balanceError = ref(false)
 const profileForm = ref({
   displayName: '',
   bio: '',
@@ -485,8 +508,8 @@ const sectionTitle = computed(() => {
 })
 
 const dashboardStats = computed(() => [
-  { label: 'Wallet Balance', value: formatMoney(user.value?.walletBalance || 0, settings.value.currency), color: 'text-amber-200' },
-  { label: 'Net Worth', value: formatMoney(user.value?.netWorth || 0, settings.value.currency), color: 'text-emerald-200' },
+  { label: 'Wallet Balance', value: formatCredits(user.value?.walletBalance || 0), color: 'text-amber-200' },
+  { label: 'Net Worth', value: formatCredits(user.value?.netWorth || 0), color: 'text-emerald-200' },
   { label: 'Active Bids', value: activeBidArtworks.value.length, color: 'text-rose-200' },
   { label: 'Uploaded Artworks', value: artworks.value.length, color: 'text-white' },
 ])
@@ -578,6 +601,20 @@ const handleUploadArtwork = async () => {
     uploadError.value = true
   } finally {
     isUploading.value = false
+  }
+}
+
+const handleAddBalance = async () => {
+  balanceMessage.value = ''
+  balanceError.value = false
+
+  try {
+    user.value = await addWalletBalance(user.value.username, balanceAmount.value)
+    localStorage.setItem('user', JSON.stringify(user.value))
+    balanceMessage.value = `${formatCredits(balanceAmount.value)} added to your wallet.`
+  } catch (error) {
+    balanceMessage.value = error.response?.data?.error || 'Could not add balance.'
+    balanceError.value = true
   }
 }
 

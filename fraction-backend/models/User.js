@@ -25,7 +25,6 @@ const userSchema = new mongoose.Schema({
     theme: { type: String, default: 'dark' },
     language: { type: String, default: 'en' },
     region: { type: String, default: 'Malaysia' },
-    currency: { type: String, default: 'USD' },
   },
 
   wishlist: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Artwork' }],

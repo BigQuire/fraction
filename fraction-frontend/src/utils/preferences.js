@@ -13,13 +13,10 @@ export const categories = [
   'Comics',
 ]
 
-export const currencies = [
-  { code: 'USD', symbol: '$', label: 'US Dollar', rate: 1 },
-  { code: 'MYR', symbol: 'RM', label: 'Malaysian Ringgit', rate: 4.72 },
-  { code: 'SGD', symbol: 'S$', label: 'Singapore Dollar', rate: 1.35 },
-  { code: 'AUD', symbol: 'A$', label: 'Australian Dollar', rate: 1.52 },
-  { code: 'EUR', symbol: '€', label: 'Euro', rate: 0.92 },
-]
+export const platformCredit = {
+  code: 'FRC',
+  label: 'Fraction Credits',
+}
 
 export const regions = [
   'United States',
@@ -43,7 +40,6 @@ export const getStoredSettings = () => {
     theme: 'dark',
     language: 'en',
     region: 'Malaysia',
-    currency: 'USD',
     ...storedSettings,
     ...storedUser?.settings,
   }
@@ -60,16 +56,10 @@ export const applyTheme = (theme = 'dark') => {
   )
 }
 
-export const formatMoney = (amount, currencyCode = 'USD') => {
-  const currency = currencies.find((item) => item.code === currencyCode) || currencies[0]
-  const convertedAmount = Number(amount || 0) * currency.rate
-
-  return `${currency.symbol}${convertedAmount.toLocaleString(undefined, {
+export const formatCredits = (amount) => {
+  return `${Number(amount || 0).toLocaleString(undefined, {
     maximumFractionDigits: 2,
-  })}`
+  })} ${platformCredit.code}`
 }
 
-export const toBaseCurrency = (amount, currencyCode = 'USD') => {
-  const currency = currencies.find((item) => item.code === currencyCode) || currencies[0]
-  return Number(amount || 0) / currency.rate
-}
+export const toCredits = (amount) => Number(amount || 0)

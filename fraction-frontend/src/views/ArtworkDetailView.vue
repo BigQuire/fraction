@@ -41,7 +41,7 @@
           <div class="mt-9 grid grid-cols-2 gap-4">
             <div class="glass-panel rounded-2xl p-5">
               <p class="text-sm text-neutral-500">Price</p>
-              <p class="mt-2 text-3xl font-black text-amber-200">{{ formatMoney(artwork.price, settings.currency) }}</p>
+              <p class="mt-2 text-3xl font-black text-amber-200">{{ formatCredits(artwork.price) }}</p>
             </div>
 
             <div class="glass-panel rounded-2xl p-5">
@@ -87,7 +87,7 @@
             <div class="mb-5">
               <p class="text-sm text-neutral-500">Current Highest Bid</p>
               <h2 class="mt-2 text-4xl font-black text-rose-200">
-                {{ formatMoney(artwork.currentBid || artwork.price, settings.currency) }}
+                {{ formatCredits(artwork.currentBid || artwork.price) }}
               </h2>
               <p class="mt-2 text-sm text-neutral-500">
                 Highest Bidder: {{ artwork.highestBidder || 'None yet' }}
@@ -99,7 +99,7 @@
                 v-model="bidAmount"
                 type="number"
                 min="0"
-                :placeholder="`Enter bid amount in ${settings.currency}`"
+                placeholder="Enter bid amount in FRC"
                 class="field"
               />
 
@@ -113,7 +113,7 @@
                 v-model="autoBidMax"
                 type="number"
                 min="0"
-                :placeholder="`Maximum auto bid in ${settings.currency}`"
+                placeholder="Maximum auto bid in FRC"
                 class="field"
               />
 
@@ -174,7 +174,7 @@ import { getArtworkById, placeBid, purchaseArtwork, setAutoBid } from '../servic
 import { addToWishlist, getUserProfile, removeFromWishlist } from '../services/userService'
 import { createCommission } from '../services/commissionService'
 import { getArtworkImageUrl } from '../utils/artworkImage'
-import { formatMoney, getStoredSettings, toBaseCurrency } from '../utils/preferences'
+import { formatCredits, getStoredSettings, toCredits } from '../utils/preferences'
 
 const route = useRoute()
 const router = useRouter()
@@ -217,7 +217,7 @@ const handleBid = async () => {
     const updatedArtwork = await placeBid(
       artwork.value._id,
       storedUser.username,
-      toBaseCurrency(bidAmount.value, settings.value.currency)
+      toCredits(bidAmount.value)
     )
     artwork.value = updatedArtwork
     bidMessage.value = 'Bid placed successfully.'
@@ -241,7 +241,7 @@ const handleAutoBid = async () => {
     artwork.value = await setAutoBid(
       artwork.value._id,
       storedUser.username,
-      toBaseCurrency(autoBidMax.value, settings.value.currency)
+      toCredits(autoBidMax.value)
     )
     bidMessage.value = 'Auto bid is active for this artwork.'
     bidError.value = false
@@ -312,7 +312,6 @@ const handleCommission = async () => {
       title: commissionForm.value.title,
       message: commissionForm.value.message,
       budget: commissionForm.value.budget,
-      currency: settings.value.currency,
       deadline: commissionForm.value.deadline,
     })
     commissionMessage.value = 'Commission request sent to the artist.'

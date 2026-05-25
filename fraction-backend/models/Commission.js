@@ -7,7 +7,6 @@ const commissionSchema = new mongoose.Schema({
   title: { type: String, required: true },
   message: { type: String, required: true },
   budget: { type: Number, default: 0 },
-  currency: { type: String, default: 'USD' },
   deadline: { type: Date },
   status: { type: String, default: 'new' },
   createdAt: { type: Date, default: Date.now },

@@ -52,11 +52,42 @@ router.post('/register', async (req, res) => {
 
 router.put('/:username/settings', async (req, res) => {
   try {
+    const { theme, language, region } = req.body
     const user = await User.findOneAndUpdate(
       { username: req.params.username },
-      { settings: req.body },
+      { settings: { theme, language, region } },
       { new: true }
     )
+
+    if (!user) {
+      return res.status(404).json({
+        message: 'User not found',
+      })
+    }
+
+    res.status(200).json(user)
+  } catch (error) {
+    res.status(500).json({
+      error: error.message,
+    })
+  }
+})
+
+router.put('/:username/wallet', async (req, res) => {
+  try {
+    const amount = Number(req.body.amount)
+
+    if (!Number.isFinite(amount) || amount <= 0) {
+      return res.status(400).json({
+        error: 'Enter a valid amount to add',
+      })
+    }
+
+    const user = await User.findOneAndUpdate(
+      { username: req.params.username },
+      { $inc: { walletBalance: amount } },
+      { new: true }
+    ).populate('wishlist')
 
     if (!user) {
       return res.status(404).json({
