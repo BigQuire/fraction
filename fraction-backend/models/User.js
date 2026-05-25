@@ -9,7 +9,17 @@ const userSchema = new mongoose.Schema({
 
   walletBalance: { type: Number, default: 0, },
 
+  netWorth: { type: Number, default: 0, },
+
   role: { type: String, default: 'user', },
+
+  profile: {
+    displayName: { type: String, default: '' },
+    bio: { type: String, default: '' },
+    avatarUrl: { type: String, default: '' },
+    location: { type: String, default: '' },
+    portfolioUrl: { type: String, default: '' },
+  },
 
   settings: {
     theme: { type: String, default: 'dark' },

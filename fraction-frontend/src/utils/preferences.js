@@ -14,11 +14,11 @@ export const categories = [
 ]
 
 export const currencies = [
-  { code: 'USD', symbol: '$', label: 'US Dollar' },
-  { code: 'MYR', symbol: 'RM', label: 'Malaysian Ringgit' },
-  { code: 'SGD', symbol: 'S$', label: 'Singapore Dollar' },
-  { code: 'AUD', symbol: 'A$', label: 'Australian Dollar' },
-  { code: 'EUR', symbol: '€', label: 'Euro' },
+  { code: 'USD', symbol: '$', label: 'US Dollar', rate: 1 },
+  { code: 'MYR', symbol: 'RM', label: 'Malaysian Ringgit', rate: 4.72 },
+  { code: 'SGD', symbol: 'S$', label: 'Singapore Dollar', rate: 1.35 },
+  { code: 'AUD', symbol: 'A$', label: 'Australian Dollar', rate: 1.52 },
+  { code: 'EUR', symbol: '€', label: 'Euro', rate: 0.92 },
 ]
 
 export const regions = [
@@ -62,5 +62,14 @@ export const applyTheme = (theme = 'dark') => {
 
 export const formatMoney = (amount, currencyCode = 'USD') => {
   const currency = currencies.find((item) => item.code === currencyCode) || currencies[0]
-  return `${currency.symbol}${Number(amount || 0).toLocaleString()}`
+  const convertedAmount = Number(amount || 0) * currency.rate
+
+  return `${currency.symbol}${convertedAmount.toLocaleString(undefined, {
+    maximumFractionDigits: 2,
+  })}`
+}
+
+export const toBaseCurrency = (amount, currencyCode = 'USD') => {
+  const currency = currencies.find((item) => item.code === currencyCode) || currencies[0]
+  return Number(amount || 0) / currency.rate
 }

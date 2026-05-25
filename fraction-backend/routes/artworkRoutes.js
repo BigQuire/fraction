@@ -11,6 +11,44 @@ const Artwork = require('../models/Artwork')
 const User = require('../models/User')
 
 const BID_INCREMENT = 10
+const RESALE_COOLDOWN_DAYS = 7
+
+const getSellerUsername = (artwork) => artwork.owner || artwork.artist
+
+const refreshUserNetWorth = async (username) => {
+  if (!username) return null
+
+  const ownedArtworks = await Artwork.find({ owner: username })
+  const netWorth = ownedArtworks.reduce(
+    (total, artwork) => total + Number(artwork.price || 0),
+    0
+  )
+
+  return User.findOneAndUpdate(
+    { username },
+    {
+      netWorth,
+      artworkNumbers: ownedArtworks.length,
+    },
+    { new: true }
+  )
+}
+
+const isCooldownActive = (artwork) => {
+  return artwork.resaleAvailableAt && new Date(artwork.resaleAvailableAt) > new Date()
+}
+
+const validateListingUpdate = (artwork, updatedData) => {
+  const listingSaleTypes = ['sale', 'bid', 'both']
+
+  if (
+    updatedData.saleType
+    && listingSaleTypes.includes(updatedData.saleType)
+    && isCooldownActive(artwork)
+  ) {
+    throw new Error('This artwork is in resale cooldown')
+  }
+}
 
 const settleBid = async (artwork, username, bidAmount) => {
   const amount = Number(bidAmount)
@@ -126,8 +164,19 @@ router.post(
 
       const {title, artist, description, price, saleType, category,} = req.body
 
-      const artwork = new Artwork({title, artist, description, price, saleType, category, imageUrl: req.file.path,})
+      const artwork = new Artwork({
+        title,
+        artist,
+        description,
+        price,
+        saleType,
+        category,
+        imageUrl: req.file.path,
+        owner: artist,
+        ownedAt: new Date(),
+      })
       await artwork.save()
+      await refreshUserNetWorth(artist)
 
       res.status(201).json({
         message: 'Artwork uploaded successfully',
@@ -147,6 +196,21 @@ router.get('/artist/:artist', async (req, res) => {
   try {
     const artworks = await Artwork.find({
       artist: req.params.artist,
+    })
+    res.status(200).json(artworks)
+  } catch (error) {
+    console.log(error)
+
+    res.status(500).json({
+      error: error.message,
+    })
+  }
+})
+
+router.get('/owner/:owner', async (req, res) => {
+  try {
+    const artworks = await Artwork.find({
+      owner: req.params.owner,
     })
     res.status(200).json(artworks)
   } catch (error) {
@@ -187,6 +251,16 @@ router.delete('/:id', async (req, res) => {
 
 router.put('/:id', async (req, res) => {
   try {
+    const artwork = await Artwork.findById(req.params.id)
+
+    if (!artwork) {
+      return res.status(404).json({
+        error: 'Artwork not found',
+      })
+    }
+
+    validateListingUpdate(artwork, req.body)
+
     const updatedArtwork =
       await Artwork.findByIdAndUpdate(
         req.params.id,
@@ -194,6 +268,121 @@ router.put('/:id', async (req, res) => {
         { new: true }
       )
     res.status(200).json(updatedArtwork)
+  } catch (error) {
+    console.log(error)
+    res.status(500).json({
+      error: error.message,
+    })
+  }
+})
+
+router.put('/:id/list', async (req, res) => {
+  try {
+    const { username, price, saleType } = req.body
+    const artwork = await Artwork.findById(req.params.id)
+
+    if (!artwork) {
+      return res.status(404).json({
+        error: 'Artwork not found',
+      })
+    }
+
+    if (artwork.owner !== username) {
+      return res.status(403).json({
+        error: 'Only the owner can list this artwork',
+      })
+    }
+
+    if (isCooldownActive(artwork)) {
+      return res.status(400).json({
+        error: `Resale available after ${artwork.resaleAvailableAt.toDateString()}`,
+      })
+    }
+
+    artwork.price = Number(price || artwork.price)
+    artwork.saleType = saleType || 'sale'
+    await artwork.save()
+    await refreshUserNetWorth(username)
+
+    res.status(200).json(artwork)
+  } catch (error) {
+    console.log(error)
+    res.status(500).json({
+      error: error.message,
+    })
+  }
+})
+
+router.put('/:id/purchase', async (req, res) => {
+  try {
+    const { username } = req.body
+    const artwork = await Artwork.findById(req.params.id)
+
+    if (!artwork) {
+      return res.status(404).json({
+        error: 'Artwork not found',
+      })
+    }
+
+    if (!['sale', 'both'].includes(artwork.saleType)) {
+      return res.status(400).json({
+        error: 'This artwork is not available for direct purchase',
+      })
+    }
+
+    const sellerUsername = getSellerUsername(artwork)
+
+    if (sellerUsername === username) {
+      return res.status(400).json({
+        error: 'You already own this artwork',
+      })
+    }
+
+    const buyer = await User.findOne({ username })
+    const seller = await User.findOne({ username: sellerUsername })
+    const price = Number(artwork.price || 0)
+
+    if (!buyer) {
+      return res.status(404).json({
+        error: 'Buyer not found',
+      })
+    }
+
+    if (buyer.walletBalance < price) {
+      return res.status(400).json({
+        error: 'Insufficient wallet balance',
+      })
+    }
+
+    buyer.walletBalance -= price
+    await buyer.save()
+
+    if (seller) {
+      seller.walletBalance += price
+      await seller.save()
+    }
+
+    artwork.previousOwner = sellerUsername
+    artwork.owner = username
+    artwork.ownedAt = new Date()
+    artwork.resaleAvailableAt = new Date(
+      Date.now() + RESALE_COOLDOWN_DAYS * 24 * 60 * 60 * 1000
+    )
+    artwork.lastSalePrice = price
+    artwork.saleType = 'owned'
+    artwork.currentBid = 0
+    artwork.highestBidder = ''
+    artwork.autoBids = []
+    await artwork.save()
+
+    const updatedBuyer = await refreshUserNetWorth(username)
+    await refreshUserNetWorth(sellerUsername)
+
+    res.status(200).json({
+      artwork,
+      user: updatedBuyer,
+      resaleAvailableAt: artwork.resaleAvailableAt,
+    })
   } catch (error) {
     console.log(error)
     res.status(500).json({
@@ -211,6 +400,12 @@ router.put('/:id/bid', async (req, res) => {
     if (!artwork) {
       return res.status(404).json({
         error: 'Artwork not found',
+      })
+    }
+
+    if (getSellerUsername(artwork) === username) {
+      return res.status(400).json({
+        error: 'You cannot bid on your own artwork',
       })
     }
 
@@ -234,6 +429,12 @@ router.put('/:id/auto-bid', async (req, res) => {
     if (!artwork) {
       return res.status(404).json({
         error: 'Artwork not found',
+      })
+    }
+
+    if (getSellerUsername(artwork) === username) {
+      return res.status(400).json({
+        error: 'You cannot auto bid on your own artwork',
       })
     }
 

@@ -36,6 +36,13 @@
             <h1 class="mt-3 text-4xl font-black text-white md:text-5xl">
               {{ sectionTitle }}
             </h1>
+            <p
+              v-if="actionMessage"
+              class="mt-3 text-sm font-semibold"
+              :class="actionError ? 'text-rose-300' : 'text-emerald-300'"
+            >
+              {{ actionMessage }}
+            </p>
           </div>
           <button v-if="activeSection === 'collection'" class="premium-button w-fit" @click="showUploadModal = true">
             Upload Artwork
@@ -100,7 +107,37 @@
         </section>
 
         <section v-else-if="activeSection === 'profile'" class="glass-panel rounded-2xl p-6">
-          <div class="grid gap-5 md:grid-cols-2">
+          <div class="grid gap-8 lg:grid-cols-[220px_1fr]">
+            <div>
+              <div class="flex aspect-square w-full items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-white/5">
+                <img
+                  v-if="profileForm.avatarUrl"
+                  :src="profileForm.avatarUrl"
+                  alt="Profile avatar"
+                  class="h-full w-full object-cover"
+                />
+                <span v-else class="text-5xl font-black text-amber-200">{{ userInitial }}</span>
+              </div>
+              <p class="mt-4 text-sm text-neutral-400">
+                Add an avatar URL, display name, bio, location, and portfolio link.
+              </p>
+            </div>
+
+            <form class="space-y-4" @submit.prevent="saveProfile">
+              <div class="grid gap-4 md:grid-cols-2">
+                <input v-model="profileForm.displayName" class="field" placeholder="Display name" />
+                <input v-model="profileForm.location" class="field" placeholder="Location" />
+              </div>
+              <input v-model="profileForm.avatarUrl" class="field" placeholder="Avatar image URL" />
+              <input v-model="profileForm.portfolioUrl" class="field" placeholder="Portfolio URL" />
+              <textarea v-model="profileForm.bio" class="field min-h-32" placeholder="Short profile bio"></textarea>
+
+              <p v-if="profileMessage" class="text-sm font-semibold text-emerald-300">{{ profileMessage }}</p>
+              <button class="premium-button" type="submit">Save Profile</button>
+            </form>
+          </div>
+
+          <div class="mt-8 grid gap-5 md:grid-cols-2">
             <div>
               <p class="text-sm text-neutral-500">Username</p>
               <p class="mt-2 text-xl font-black text-white">{{ user?.username }}</p>
@@ -300,9 +337,9 @@
 <script setup>
 import { computed, defineComponent, h, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { getArtistArtworks, deleteArtwork, updateArtwork, uploadArtwork } from '../services/artworkService'
+import { deleteArtwork, getOwnerArtworks, updateArtwork, uploadArtwork } from '../services/artworkService'
 import { getArtistCommissions, updateCommissionStatus } from '../services/commissionService'
-import { getUserProfile, updateUserSettings } from '../services/userService'
+import { getUserProfile, updateUserProfile, updateUserSettings } from '../services/userService'
 import ArtworkCard from '../components/ArtworkCard.vue'
 import { getArtworkImageUrl } from '../utils/artworkImage'
 import {
@@ -388,6 +425,16 @@ const isUploading = ref(false)
 const commissions = ref([])
 const settings = ref(getStoredSettings())
 const settingsMessage = ref('')
+const profileMessage = ref('')
+const actionMessage = ref('')
+const actionError = ref(false)
+const profileForm = ref({
+  displayName: '',
+  bio: '',
+  avatarUrl: '',
+  location: '',
+  portfolioUrl: '',
+})
 
 const navItems = [
   { key: 'dashboard', label: 'Dashboard' },
@@ -449,11 +496,18 @@ const refreshUser = async () => {
   user.value = await getUserProfile(user.value.username)
   localStorage.setItem('user', JSON.stringify(user.value))
   settings.value = getStoredSettings()
+  profileForm.value = {
+    displayName: user.value.profile?.displayName || '',
+    bio: user.value.profile?.bio || '',
+    avatarUrl: user.value.profile?.avatarUrl || '',
+    location: user.value.profile?.location || '',
+    portfolioUrl: user.value.profile?.portfolioUrl || '',
+  }
 }
 
 const refreshArtworks = async () => {
   if (!user.value?.username) return
-  artworks.value = await getArtistArtworks(user.value.username)
+  artworks.value = await getOwnerArtworks(user.value.username)
 }
 
 const refreshCommissions = async () => {
@@ -466,8 +520,16 @@ const handleDelete = async (id) => {
     await deleteArtwork(id)
     artworks.value = artworks.value.filter((artwork) => artwork._id !== id)
   } catch (error) {
-    console.error(error)
+    setActionMessage(error.response?.data?.error || 'Could not delete artwork.', true)
   }
+}
+
+const setActionMessage = (message, isError = false) => {
+  actionMessage.value = message
+  actionError.value = isError
+  setTimeout(() => {
+    actionMessage.value = ''
+  }, 3500)
 }
 
 const handleFileChange = (event) => {
@@ -530,8 +592,9 @@ const startAuction = async (artwork) => {
 
     await updateArtwork(artwork._id, updatedArtwork)
     await refreshArtworks()
+    setActionMessage('Artwork listed for bidding.')
   } catch (error) {
-    console.error(error)
+    setActionMessage(error.response?.data?.error || 'Could not list artwork for bidding.', true)
   }
 }
 
@@ -539,8 +602,9 @@ const changeCommissionStatus = async (id, status) => {
   try {
     await updateCommissionStatus(id, status)
     await refreshCommissions()
+    setActionMessage('Commission status updated.')
   } catch (error) {
-    console.error(error)
+    setActionMessage(error.response?.data?.error || 'Could not update commission status.', true)
   }
 }
 
@@ -559,7 +623,7 @@ const saveSettings = async () => {
       settingsMessage.value = ''
     }, 2000)
   } catch (error) {
-    console.error(error)
+    setActionMessage(error.response?.data?.error || 'Could not save settings.', true)
   }
 }
 
@@ -577,8 +641,22 @@ const handleUpdate = async () => {
     const updated = await updateArtwork(editingArtwork.value._id, editingArtwork.value)
     artworks.value = artworks.value.map((artwork) => artwork._id === updated._id ? updated : artwork)
     editingArtwork.value = null
+    setActionMessage('Artwork updated.')
   } catch (error) {
-    console.error(error)
+    setActionMessage(error.response?.data?.error || 'Could not update artwork.', true)
+  }
+}
+
+const saveProfile = async () => {
+  try {
+    user.value = await updateUserProfile(user.value.username, profileForm.value)
+    localStorage.setItem('user', JSON.stringify(user.value))
+    profileMessage.value = 'Profile saved.'
+    setTimeout(() => {
+      profileMessage.value = ''
+    }, 2500)
+  } catch (error) {
+    setActionMessage(error.response?.data?.error || 'Could not save profile.', true)
   }
 }
 

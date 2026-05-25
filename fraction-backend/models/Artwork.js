@@ -37,6 +37,14 @@ const artworkSchema = new mongoose.Schema({
   discountPercent: { type: Number, default: 0 },
 
   owner: { type: String, },
+
+  previousOwner: { type: String, },
+
+  ownedAt: { type: Date, },
+
+  resaleAvailableAt: { type: Date, },
+
+  lastSalePrice: { type: Number, default: 0 },
 })
 
 module.exports = mongoose.model('Artwork', artworkSchema)

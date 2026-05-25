@@ -20,6 +20,12 @@ export const getArtistArtworks = async (artist) => {
   return response.data
 }
 
+export const getOwnerArtworks = async (owner) => {
+
+  const response = await axios.get(`${API_URL}/owner/${owner}`)
+  return response.data
+}
+
 
 export const deleteArtwork = async (id) => {
 
@@ -48,5 +54,17 @@ export const placeBid = async (id, username, bidAmount) => {
 export const setAutoBid = async (id, username, maxBid) => {
 
   const response = await axios.put(`${API_URL}/${id}/auto-bid`, { username, maxBid })
+  return response.data
+}
+
+export const purchaseArtwork = async (id, username) => {
+
+  const response = await axios.put(`${API_URL}/${id}/purchase`, { username })
+  return response.data
+}
+
+export const listArtworkForSale = async (id, listingData) => {
+
+  const response = await axios.put(`${API_URL}/${id}/list`, listingData)
   return response.data
 }

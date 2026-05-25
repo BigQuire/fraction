@@ -34,6 +34,12 @@ export const updateUserSettings = async (username, settings) => {
   return response.data
 }
 
+export const updateUserProfile = async (username, profile) => {
+
+  const response = await axios.put(`${API_URL}/${username}/profile`, profile)
+  return response.data
+}
+
 export const addToWishlist = async (username, artworkId) => {
 
   const response = await axios.post(`${API_URL}/${username}/wishlist/${artworkId}`)

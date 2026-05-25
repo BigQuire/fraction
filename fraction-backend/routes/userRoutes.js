@@ -30,6 +30,9 @@ router.post('/register', async (req, res) => {
       username,
       email,
       password,
+      profile: {
+        displayName: username,
+      },
     })
 
     await newUser.save()
@@ -54,6 +57,28 @@ router.put('/:username/settings', async (req, res) => {
       { settings: req.body },
       { new: true }
     )
+
+    if (!user) {
+      return res.status(404).json({
+        message: 'User not found',
+      })
+    }
+
+    res.status(200).json(user)
+  } catch (error) {
+    res.status(500).json({
+      error: error.message,
+    })
+  }
+})
+
+router.put('/:username/profile', async (req, res) => {
+  try {
+    const user = await User.findOneAndUpdate(
+      { username: req.params.username },
+      { profile: req.body },
+      { new: true }
+    ).populate('wishlist')
 
     if (!user) {
       return res.status(404).json({

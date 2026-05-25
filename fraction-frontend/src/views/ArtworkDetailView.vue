@@ -54,7 +54,7 @@
             <button
               v-if="artwork.saleType === 'sale' || artwork.saleType === 'both'"
               class="premium-button"
-              @click="buyMessage = 'Checkout is not connected yet, but this artwork is ready for purchase flow.'"
+              @click="handlePurchase"
             >
               Buy Now
             </button>
@@ -67,9 +67,21 @@
             <router-link to="/marketplace" class="secondary-button">Back to Marketplace</router-link>
           </div>
 
-          <p v-if="buyMessage" class="mt-4 text-sm font-semibold text-amber-100">
+          <p
+            v-if="buyMessage"
+            class="mt-4 text-sm font-semibold"
+            :class="buyError ? 'text-rose-300' : 'text-emerald-300'"
+          >
             {{ buyMessage }}
           </p>
+
+          <div v-if="artwork.owner" class="mt-6 rounded-2xl border border-white/10 bg-white/5 p-4">
+            <p class="text-sm text-neutral-500">Current Owner</p>
+            <p class="mt-1 font-bold text-white">{{ artwork.owner }}</p>
+            <p v-if="artwork.resaleAvailableAt" class="mt-2 text-sm text-neutral-500">
+              Resale available: {{ formatDate(artwork.resaleAvailableAt) }}
+            </p>
+          </div>
 
           <div v-if="artwork.saleType === 'bid' || artwork.saleType === 'both'" class="glass-panel mt-8 rounded-2xl p-6">
             <div class="mb-5">
@@ -87,7 +99,7 @@
                 v-model="bidAmount"
                 type="number"
                 min="0"
-                placeholder="Enter bid amount"
+                :placeholder="`Enter bid amount in ${settings.currency}`"
                 class="field"
               />
 
@@ -101,7 +113,7 @@
                 v-model="autoBidMax"
                 type="number"
                 min="0"
-                placeholder="Maximum auto bid"
+                :placeholder="`Maximum auto bid in ${settings.currency}`"
                 class="field"
               />
 
@@ -158,11 +170,11 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getArtworkById, placeBid, setAutoBid } from '../services/artworkService'
+import { getArtworkById, placeBid, purchaseArtwork, setAutoBid } from '../services/artworkService'
 import { addToWishlist, getUserProfile, removeFromWishlist } from '../services/userService'
 import { createCommission } from '../services/commissionService'
 import { getArtworkImageUrl } from '../utils/artworkImage'
-import { formatMoney, getStoredSettings } from '../utils/preferences'
+import { formatMoney, getStoredSettings, toBaseCurrency } from '../utils/preferences'
 
 const route = useRoute()
 const router = useRouter()
@@ -171,6 +183,7 @@ const bidAmount = ref('')
 const bidMessage = ref('')
 const bidError = ref(false)
 const buyMessage = ref('')
+const buyError = ref(false)
 const isLoading = ref(true)
 const autoBidMax = ref('')
 const user = ref(null)
@@ -204,7 +217,7 @@ const handleBid = async () => {
     const updatedArtwork = await placeBid(
       artwork.value._id,
       storedUser.username,
-      Number(bidAmount.value)
+      toBaseCurrency(bidAmount.value, settings.value.currency)
     )
     artwork.value = updatedArtwork
     bidMessage.value = 'Bid placed successfully.'
@@ -228,7 +241,7 @@ const handleAutoBid = async () => {
     artwork.value = await setAutoBid(
       artwork.value._id,
       storedUser.username,
-      Number(autoBidMax.value)
+      toBaseCurrency(autoBidMax.value, settings.value.currency)
     )
     bidMessage.value = 'Auto bid is active for this artwork.'
     bidError.value = false
@@ -236,6 +249,29 @@ const handleAutoBid = async () => {
   } catch (error) {
     bidMessage.value = error.response?.data?.error || 'Failed to enable auto bid.'
     bidError.value = true
+  }
+}
+
+const handlePurchase = async () => {
+  const storedUser = JSON.parse(localStorage.getItem('user'))
+
+  if (!storedUser) {
+    router.push('/login')
+    return
+  }
+
+  buyMessage.value = ''
+  buyError.value = false
+
+  try {
+    const result = await purchaseArtwork(artwork.value._id, storedUser.username)
+    artwork.value = result.artwork
+    user.value = result.user
+    localStorage.setItem('user', JSON.stringify(result.user))
+    buyMessage.value = `Purchased successfully. You can resell after ${formatDate(result.resaleAvailableAt)}.`
+  } catch (error) {
+    buyMessage.value = error.response?.data?.error || 'Purchase failed.'
+    buyError.value = true
   }
 }
 
@@ -286,6 +322,11 @@ const handleCommission = async () => {
     commissionMessage.value = error.response?.data?.error || 'Commission request failed.'
     commissionError.value = true
   }
+}
+
+const formatDate = (date) => {
+  if (!date) return 'Not set'
+  return new Date(date).toLocaleDateString()
 }
 
 onMounted(async () => {
