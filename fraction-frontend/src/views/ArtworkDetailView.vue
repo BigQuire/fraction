@@ -98,7 +98,7 @@
               <input
                 v-model="bidAmount"
                 type="number"
-                min="0"
+                :min="minimumNextBid"
                 placeholder="Enter bid amount in FRC"
                 class="field"
               />
@@ -112,8 +112,8 @@
               <input
                 v-model="autoBidMax"
                 type="number"
-                min="0"
-                placeholder="Maximum auto bid in FRC"
+                :min="minimumNextBid"
+                :placeholder="`Maximum auto bid, min ${minimumNextBid} FRC`"
                 class="field"
               />
 
@@ -204,6 +204,8 @@ const statusLabel = computed(() => {
   if (artwork.value?.saleType === 'both') return 'Sale + Bid'
   return 'On Sale'
 })
+
+const minimumNextBid = computed(() => Number(artwork.value?.currentBid || 1) + 1)
 
 const handleBid = async () => {
   const storedUser = JSON.parse(localStorage.getItem('user'))

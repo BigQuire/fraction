@@ -10,7 +10,7 @@ const cloudinary = require('../config/cloudinary')
 const Artwork = require('../models/Artwork')
 const User = require('../models/User')
 
-const BID_INCREMENT = 10
+const BID_INCREMENT = 1
 const STARTING_BID = 1
 const RESALE_COOLDOWN_DAYS = 7
 
@@ -89,7 +89,7 @@ const settleBid = async (artwork, username, bidAmount) => {
 }
 
 const processAutoBids = async (artwork) => {
-  let safetyLimit = 50
+  let safetyLimit = 10000
 
   while (safetyLimit > 0) {
     safetyLimit -= 1
@@ -434,11 +434,18 @@ router.put('/:id/bid', async (req, res) => {
 router.put('/:id/auto-bid', async (req, res) => {
   try {
     const { username, maxBid } = req.body
+    const maxBidAmount = Number(maxBid)
     const artwork = await Artwork.findById(req.params.id)
 
     if (!artwork) {
       return res.status(404).json({
         error: 'Artwork not found',
+      })
+    }
+
+    if (!Number.isFinite(maxBidAmount) || maxBidAmount <= Number(artwork.currentBid || 0)) {
+      return res.status(400).json({
+        error: 'Auto bid maximum must be higher than the current bid',
       })
     }
 
@@ -467,12 +474,12 @@ router.put('/:id/auto-bid', async (req, res) => {
     )
 
     if (existingAutoBid) {
-      existingAutoBid.maxBid = Number(maxBid)
+      existingAutoBid.maxBid = maxBidAmount
       existingAutoBid.active = true
     } else {
       artwork.autoBids.push({
         username,
-        maxBid: Number(maxBid),
+        maxBid: maxBidAmount,
         active: true,
       })
     }

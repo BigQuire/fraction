@@ -53,9 +53,15 @@
             <label class="block">
               <span class="mb-2 flex items-center justify-between text-sm font-semibold text-neutral-300">
                 <span>Max Price</span>
-                <span class="text-amber-200">{{ formatCredits(maxPrice) }}</span>
+                <span class="text-amber-200">{{ maxPrice ? formatCredits(maxPrice) : 'No limit' }}</span>
               </span>
-              <input v-model.number="maxPrice" type="range" min="0" max="10000" step="100" class="w-full accent-amber-200" />
+              <input
+                v-model.number="maxPrice"
+                type="number"
+                min="0"
+                placeholder="No limit"
+                class="field"
+              />
             </label>
 
             <label class="block">
@@ -110,7 +116,7 @@ const searchQuery = ref('')
 const selectedType = ref('all')
 const selectedCategory = ref('all')
 const sortOption = ref('default')
-const maxPrice = ref(10000)
+const maxPrice = ref('')
 const isLoading = ref(true)
 
 onMounted(async () => {
@@ -140,7 +146,7 @@ const resetFilters = () => {
   selectedType.value = 'all'
   selectedCategory.value = 'all'
   sortOption.value = 'default'
-  maxPrice.value = 10000
+  maxPrice.value = ''
 }
 
 const filteredArtworks = computed(() => {
@@ -160,7 +166,9 @@ const filteredArtworks = computed(() => {
     filtered = filtered.filter((artwork) => artwork.category === selectedCategory.value)
   }
 
-  filtered = filtered.filter((artwork) => Number(displayPrice(artwork)) <= Number(maxPrice.value))
+  if (maxPrice.value !== '' && maxPrice.value !== null) {
+    filtered = filtered.filter((artwork) => Number(displayPrice(artwork)) <= Number(maxPrice.value))
+  }
 
   if (sortOption.value === 'low-high') {
     filtered.sort((a, b) => displayPrice(a) - displayPrice(b))
