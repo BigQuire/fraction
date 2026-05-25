@@ -29,7 +29,7 @@
         <div>
           <p class="text-xs uppercase tracking-wide text-neutral-500">Price</p>
           <span class="text-2xl font-black text-amber-200">
-          ${{ price }}
+          {{ formatMoney(price, currency) }}
         </span>
         </div>
 
@@ -48,6 +48,7 @@
 <script setup>
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { formatMoney } from '../utils/preferences'
 
 const router = useRouter()
 
@@ -56,6 +57,10 @@ const props = defineProps({
   title: String,
   artist: String,
   price: Number,
+  currency: {
+    type: String,
+    default: 'USD',
+  },
   saleType: String,
   id: String,
 })

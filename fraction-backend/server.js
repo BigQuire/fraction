@@ -6,6 +6,7 @@ require('dotenv').config()
 const Artwork = require('./models/Artwork')
 const userRoutes = require('./routes/userRoutes')
 const artworkRoutes = require('./routes/artworkRoutes')
+const commissionRoutes = require('./routes/commissionRoutes')
 
 const app = express()
 
@@ -13,6 +14,7 @@ app.use(cors())
 app.use(express.json())
 app.use('/api/users', userRoutes)
 app.use('/api/artworks', artworkRoutes)
+app.use('/api/commissions', commissionRoutes)
 app.use('/uploads', express.static('uploads'))
 
 mongoose.connect(process.env.MONGO_URI)

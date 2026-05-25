@@ -51,6 +51,7 @@
           :title="artwork.title"
           :artist="artwork.artist"
           :price="artwork.price"
+          :currency="settings.currency"
           :saleType="artwork.saleType"
           :id="artwork._id"
         />
@@ -77,6 +78,7 @@
           :title="artwork.title"
           :artist="artwork.artist"
           :price="artwork.currentBid || artwork.price"
+          :currency="settings.currency"
           :saleType="artwork.saleType"
           :id="artwork._id"
         />
@@ -95,8 +97,10 @@ import { ref, onMounted, computed } from 'vue'
 import ArtworkCard from '../components/ArtworkCard.vue'
 import { getArtworks } from '../services/artworkService'
 import { getArtworkImageUrl } from '../utils/artworkImage'
+import { getStoredSettings } from '../utils/preferences'
 
 const artworks = ref([])
+const settings = ref(getStoredSettings())
 
 const stats = computed(() => [
   { value: artworks.value.length, label: 'Artworks' },

@@ -11,6 +11,15 @@ const userSchema = new mongoose.Schema({
 
   role: { type: String, default: 'user', },
 
+  settings: {
+    theme: { type: String, default: 'dark' },
+    language: { type: String, default: 'en' },
+    region: { type: String, default: 'Malaysia' },
+    currency: { type: String, default: 'USD' },
+  },
+
+  wishlist: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Artwork' }],
+
   createdAt: { type: Date, default: Date.now, },
 
   artworkNumbers: { type: Number, default: 0, },

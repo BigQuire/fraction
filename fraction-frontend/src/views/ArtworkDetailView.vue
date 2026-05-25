@@ -41,7 +41,7 @@
           <div class="mt-9 grid grid-cols-2 gap-4">
             <div class="glass-panel rounded-2xl p-5">
               <p class="text-sm text-neutral-500">Price</p>
-              <p class="mt-2 text-3xl font-black text-amber-200">${{ artwork.price }}</p>
+              <p class="mt-2 text-3xl font-black text-amber-200">{{ formatMoney(artwork.price, settings.currency) }}</p>
             </div>
 
             <div class="glass-panel rounded-2xl p-5">
@@ -58,6 +58,12 @@
             >
               Buy Now
             </button>
+            <button class="secondary-button" @click="toggleWishlist">
+              {{ isWishlisted ? 'Remove Wishlist' : 'Add Wishlist' }}
+            </button>
+            <button class="secondary-button" @click="showCommissionModal = true">
+              Request Commission
+            </button>
             <router-link to="/marketplace" class="secondary-button">Back to Marketplace</router-link>
           </div>
 
@@ -69,7 +75,7 @@
             <div class="mb-5">
               <p class="text-sm text-neutral-500">Current Highest Bid</p>
               <h2 class="mt-2 text-4xl font-black text-rose-200">
-                ${{ artwork.currentBid || artwork.price }}
+                {{ formatMoney(artwork.currentBid || artwork.price, settings.currency) }}
               </h2>
               <p class="mt-2 text-sm text-neutral-500">
                 Highest Bidder: {{ artwork.highestBidder || 'None yet' }}
@@ -90,6 +96,24 @@
               </button>
             </form>
 
+            <form class="mt-5 grid gap-3 border-t border-white/10 pt-5 sm:grid-cols-[1fr_auto]" @submit.prevent="handleAutoBid">
+              <input
+                v-model="autoBidMax"
+                type="number"
+                min="0"
+                placeholder="Maximum auto bid"
+                class="field"
+              />
+
+              <button class="secondary-button shrink-0" type="submit">
+                Enable Auto Bid
+              </button>
+            </form>
+
+            <p class="mt-3 text-xs leading-5 text-neutral-500">
+              Auto bid raises your bid by small increments until your max bid or wallet balance is reached.
+            </p>
+
             <p
               v-if="bidMessage"
               class="mt-4 text-sm font-semibold"
@@ -106,14 +130,39 @@
       <h1 class="text-4xl font-black text-white">Artwork not found</h1>
       <router-link to="/marketplace" class="premium-button mt-6">Return to Marketplace</router-link>
     </section>
+
+    <div v-if="showCommissionModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/75 px-5">
+      <div class="glass-panel w-full max-w-2xl rounded-2xl p-6">
+        <div class="mb-6 flex items-center justify-between gap-4">
+          <h2 class="text-3xl font-black text-white">Request Custom Art</h2>
+          <button class="secondary-button px-4 py-2" @click="showCommissionModal = false">Close</button>
+        </div>
+
+        <form class="space-y-4" @submit.prevent="handleCommission">
+          <input v-model="commissionForm.title" class="field" placeholder="Commission title" required />
+          <textarea v-model="commissionForm.message" class="field min-h-32" placeholder="Describe the art you want" required />
+          <div class="grid gap-4 sm:grid-cols-2">
+            <input v-model.number="commissionForm.budget" class="field" type="number" min="0" placeholder="Budget" />
+            <input v-model="commissionForm.deadline" class="field" type="date" />
+          </div>
+          <p v-if="commissionMessage" class="text-sm font-semibold" :class="commissionError ? 'text-rose-300' : 'text-emerald-300'">
+            {{ commissionMessage }}
+          </p>
+          <button class="premium-button" type="submit">Send Request</button>
+        </form>
+      </div>
+    </div>
   </main>
 </template>
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getArtworkById, placeBid } from '../services/artworkService'
+import { getArtworkById, placeBid, setAutoBid } from '../services/artworkService'
+import { addToWishlist, getUserProfile, removeFromWishlist } from '../services/userService'
+import { createCommission } from '../services/commissionService'
 import { getArtworkImageUrl } from '../utils/artworkImage'
+import { formatMoney, getStoredSettings } from '../utils/preferences'
 
 const route = useRoute()
 const router = useRouter()
@@ -123,6 +172,19 @@ const bidMessage = ref('')
 const bidError = ref(false)
 const buyMessage = ref('')
 const isLoading = ref(true)
+const autoBidMax = ref('')
+const user = ref(null)
+const settings = ref(getStoredSettings())
+const isWishlisted = ref(false)
+const showCommissionModal = ref(false)
+const commissionMessage = ref('')
+const commissionError = ref(false)
+const commissionForm = ref({
+  title: '',
+  message: '',
+  budget: '',
+  deadline: '',
+})
 
 const statusLabel = computed(() => {
   if (artwork.value?.saleType === 'bid') return 'Live Bid'
@@ -131,9 +193,9 @@ const statusLabel = computed(() => {
 })
 
 const handleBid = async () => {
-  const user = JSON.parse(localStorage.getItem('user'))
+  const storedUser = JSON.parse(localStorage.getItem('user'))
 
-  if (!user) {
+  if (!storedUser) {
     router.push('/login')
     return
   }
@@ -141,7 +203,7 @@ const handleBid = async () => {
   try {
     const updatedArtwork = await placeBid(
       artwork.value._id,
-      user.username,
+      storedUser.username,
       Number(bidAmount.value)
     )
     artwork.value = updatedArtwork
@@ -154,9 +216,89 @@ const handleBid = async () => {
   }
 }
 
+const handleAutoBid = async () => {
+  const storedUser = JSON.parse(localStorage.getItem('user'))
+
+  if (!storedUser) {
+    router.push('/login')
+    return
+  }
+
+  try {
+    artwork.value = await setAutoBid(
+      artwork.value._id,
+      storedUser.username,
+      Number(autoBidMax.value)
+    )
+    bidMessage.value = 'Auto bid is active for this artwork.'
+    bidError.value = false
+    autoBidMax.value = ''
+  } catch (error) {
+    bidMessage.value = error.response?.data?.error || 'Failed to enable auto bid.'
+    bidError.value = true
+  }
+}
+
+const toggleWishlist = async () => {
+  const storedUser = JSON.parse(localStorage.getItem('user'))
+
+  if (!storedUser) {
+    router.push('/login')
+    return
+  }
+
+  try {
+    const updatedUser = isWishlisted.value
+      ? await removeFromWishlist(storedUser.username, artwork.value._id)
+      : await addToWishlist(storedUser.username, artwork.value._id)
+
+    user.value = updatedUser
+    localStorage.setItem('user', JSON.stringify(updatedUser))
+    isWishlisted.value = !isWishlisted.value
+  } catch (error) {
+    buyMessage.value = error.response?.data?.error || 'Wishlist could not be updated yet.'
+  }
+}
+
+const handleCommission = async () => {
+  const storedUser = JSON.parse(localStorage.getItem('user'))
+
+  if (!storedUser) {
+    router.push('/login')
+    return
+  }
+
+  try {
+    await createCommission({
+      artist: artwork.value.artist,
+      fromUser: storedUser.username,
+      artworkId: artwork.value._id,
+      title: commissionForm.value.title,
+      message: commissionForm.value.message,
+      budget: commissionForm.value.budget,
+      currency: settings.value.currency,
+      deadline: commissionForm.value.deadline,
+    })
+    commissionMessage.value = 'Commission request sent to the artist.'
+    commissionError.value = false
+    commissionForm.value = { title: '', message: '', budget: '', deadline: '' }
+  } catch (error) {
+    commissionMessage.value = error.response?.data?.error || 'Commission request failed.'
+    commissionError.value = true
+  }
+}
+
 onMounted(async () => {
   try {
     artwork.value = await getArtworkById(route.params.id)
+    const storedUser = JSON.parse(localStorage.getItem('user'))
+
+    if (storedUser?.username) {
+      user.value = await getUserProfile(storedUser.username)
+      localStorage.setItem('user', JSON.stringify(user.value))
+      settings.value = getStoredSettings()
+      isWishlisted.value = user.value.wishlist?.some((item) => item._id === artwork.value._id || item === artwork.value._id)
+    }
   } catch (error) {
     console.error(error)
   } finally {

@@ -111,7 +111,7 @@
             </div>
             <div>
               <p class="text-sm text-neutral-500">Wallet Balance</p>
-              <p class="mt-2 text-xl font-black text-amber-200">${{ user?.walletBalance || 0 }}</p>
+              <p class="mt-2 text-xl font-black text-amber-200">{{ formatMoney(user?.walletBalance || 0, settings.currency) }}</p>
             </div>
             <div>
               <p class="text-sm text-neutral-500">Uploaded Artworks</p>
@@ -120,10 +120,108 @@
           </div>
         </section>
 
+        <section v-else-if="activeSection === 'commissions'" class="space-y-5">
+          <div v-if="commissions.length" class="grid gap-4">
+            <article v-for="commission in commissions" :key="commission._id" class="glass-panel rounded-2xl p-5">
+              <div class="flex flex-col justify-between gap-4 md:flex-row md:items-start">
+                <div>
+                  <p class="text-sm font-bold uppercase tracking-[0.2em] text-amber-200">{{ commission.status }}</p>
+                  <h2 class="mt-2 text-2xl font-black text-white">{{ commission.title }}</h2>
+                  <p class="mt-2 text-neutral-400">From {{ commission.fromUser }}</p>
+                  <p class="mt-4 leading-7 text-neutral-300">{{ commission.message }}</p>
+                </div>
+                <div class="min-w-44 rounded-2xl border border-white/10 bg-white/5 p-4">
+                  <p class="text-sm text-neutral-500">Budget</p>
+                  <p class="text-xl font-black text-white">{{ formatMoney(commission.budget, commission.currency || settings.currency) }}</p>
+                  <p class="mt-3 text-sm text-neutral-500">Deadline</p>
+                  <p class="text-sm font-semibold text-neutral-300">{{ formatDate(commission.deadline) }}</p>
+                </div>
+              </div>
+              <div class="mt-5 flex flex-wrap gap-3">
+                <button class="secondary-button px-4 py-2" @click="changeCommissionStatus(commission._id, 'accepted')">Accept</button>
+                <button class="secondary-button px-4 py-2" @click="changeCommissionStatus(commission._id, 'in-progress')">In Progress</button>
+                <button class="secondary-button px-4 py-2" @click="changeCommissionStatus(commission._id, 'completed')">Complete</button>
+              </div>
+            </article>
+          </div>
+
+          <div v-else class="glass-panel rounded-2xl p-10 text-center">
+            <h2 class="text-3xl font-black text-white">No commission requests yet</h2>
+            <p class="mx-auto mt-3 max-w-xl text-neutral-400">
+              When collectors request custom art from your artwork pages, those messages will appear here.
+            </p>
+          </div>
+        </section>
+
+        <section v-else-if="activeSection === 'wishlist'" class="space-y-6">
+          <div v-if="wishlistNotifications.length" class="glass-panel rounded-2xl p-5">
+            <h2 class="text-2xl font-black text-white">Wishlist Notifications</h2>
+            <div class="mt-4 grid gap-3">
+              <p v-for="notice in wishlistNotifications" :key="notice._id" class="rounded-2xl bg-amber-200/10 p-4 text-sm font-semibold text-amber-100">
+                {{ notice.title }} has {{ notice.discountPercent ? `${notice.discountPercent}% discount` : 'bid activity' }}.
+              </p>
+            </div>
+          </div>
+
+          <ArtworkGrid
+            :artworks="wishlistArtworks"
+            empty-title="Your wishlist is empty"
+            empty-text="Add artworks from the detail page to watch sales, discounts, and bid activity."
+          />
+        </section>
+
+        <section v-else-if="activeSection === 'settings'" class="glass-panel rounded-2xl p-6">
+          <form class="space-y-6" @submit.prevent="saveSettings">
+            <div class="grid gap-5 md:grid-cols-2">
+              <label class="block">
+                <span class="mb-2 block text-sm font-semibold text-neutral-300">Theme</span>
+                <select v-model="settings.theme" class="field" @change="applyTheme(settings.theme)">
+                  <option value="dark">Dark Theme</option>
+                  <option value="light">Light Theme</option>
+                </select>
+              </label>
+
+              <label class="block">
+                <span class="mb-2 block text-sm font-semibold text-neutral-300">Language</span>
+                <select v-model="settings.language" class="field">
+                  <option v-for="language in languages" :key="language.code" :value="language.code">
+                    {{ language.label }}
+                  </option>
+                </select>
+              </label>
+
+              <label class="block">
+                <span class="mb-2 block text-sm font-semibold text-neutral-300">Region</span>
+                <select v-model="settings.region" class="field">
+                  <option v-for="region in regions" :key="region" :value="region">
+                    {{ region }}
+                  </option>
+                </select>
+              </label>
+
+              <label class="block">
+                <span class="mb-2 block text-sm font-semibold text-neutral-300">Currency</span>
+                <select v-model="settings.currency" class="field">
+                  <option v-for="currency in currencies" :key="currency.code" :value="currency.code">
+                    {{ currency.code }} - {{ currency.label }}
+                  </option>
+                </select>
+              </label>
+            </div>
+
+            <p class="text-sm text-neutral-400">
+              Currency affects display values across marketplace, artwork, wishlist, and dashboard views.
+            </p>
+
+            <p v-if="settingsMessage" class="text-sm font-semibold text-emerald-300">{{ settingsMessage }}</p>
+            <button class="premium-button" type="submit">Save Settings</button>
+          </form>
+        </section>
+
         <section v-else class="glass-panel rounded-2xl p-12 text-center">
           <h2 class="text-3xl font-black text-white">{{ sectionTitle }}</h2>
           <p class="mx-auto mt-3 max-w-xl text-neutral-400">
-            This area is ready for the next feature. For now, your artwork management, bidding, profile, and upload flows are available from the dashboard.
+            This section is available for the next feature expansion.
           </p>
         </section>
       </section>
@@ -141,10 +239,7 @@
           <textarea v-model="editingArtwork.description" placeholder="Description" class="field min-h-28" />
           <input v-model.number="editingArtwork.price" type="number" min="0" placeholder="Price" class="field" required />
           <select v-model="editingArtwork.category" class="field">
-            <option>Anime</option>
-            <option>Fantasy</option>
-            <option>Cyberpunk</option>
-            <option>Nature</option>
+            <option v-for="category in categories" :key="category">{{ category }}</option>
           </select>
           <select v-model="editingArtwork.saleType" class="field">
             <option value="sale">Sale</option>
@@ -174,10 +269,7 @@
 
           <div class="grid gap-4 sm:grid-cols-2">
             <select v-model="uploadForm.category" class="field">
-              <option>Anime</option>
-              <option>Fantasy</option>
-              <option>Cyberpunk</option>
-              <option>Nature</option>
+              <option v-for="category in categories" :key="category">{{ category }}</option>
             </select>
 
             <select v-model="uploadForm.saleType" class="field">
@@ -209,8 +301,19 @@
 import { computed, defineComponent, h, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { getArtistArtworks, deleteArtwork, updateArtwork, uploadArtwork } from '../services/artworkService'
+import { getArtistCommissions, updateCommissionStatus } from '../services/commissionService'
+import { getUserProfile, updateUserSettings } from '../services/userService'
 import ArtworkCard from '../components/ArtworkCard.vue'
 import { getArtworkImageUrl } from '../utils/artworkImage'
+import {
+  applyTheme,
+  categories,
+  currencies,
+  formatMoney,
+  getStoredSettings,
+  languages,
+  regions,
+} from '../utils/preferences'
 
 const ArtworkGrid = defineComponent({
   props: {
@@ -282,6 +385,9 @@ const selectedFile = ref(null)
 const uploadMessage = ref('')
 const uploadError = ref(false)
 const isUploading = ref(false)
+const commissions = ref([])
+const settings = ref(getStoredSettings())
+const settingsMessage = ref('')
 
 const navItems = [
   { key: 'dashboard', label: 'Dashboard' },
@@ -298,11 +404,19 @@ const uploadForm = ref({
   title: '',
   description: '',
   price: '',
-  category: 'Anime',
+  category: categories[0],
   saleType: 'sale',
 })
 
 const activeBidArtworks = computed(() => artworks.value.filter((artwork) => artwork.saleType === 'bid' || artwork.saleType === 'both'))
+
+const wishlistArtworks = computed(() => user.value?.wishlist || [])
+
+const wishlistNotifications = computed(() => {
+  return wishlistArtworks.value.filter(
+    (artwork) => artwork.discountPercent > 0 || artwork.saleType === 'bid' || artwork.saleType === 'both'
+  )
+})
 
 const userInitial = computed(() => user.value?.username?.charAt(0)?.toUpperCase() || 'U')
 
@@ -324,15 +438,27 @@ const sectionTitle = computed(() => {
 })
 
 const dashboardStats = computed(() => [
-  { label: 'Wallet Balance', value: `$${user.value?.walletBalance || 0}`, color: 'text-amber-200' },
-  { label: 'Net Worth', value: `$${user.value?.netWorth || 0}`, color: 'text-emerald-200' },
+  { label: 'Wallet Balance', value: formatMoney(user.value?.walletBalance || 0, settings.value.currency), color: 'text-amber-200' },
+  { label: 'Net Worth', value: formatMoney(user.value?.netWorth || 0, settings.value.currency), color: 'text-emerald-200' },
   { label: 'Active Bids', value: activeBidArtworks.value.length, color: 'text-rose-200' },
   { label: 'Uploaded Artworks', value: artworks.value.length, color: 'text-white' },
 ])
 
+const refreshUser = async () => {
+  if (!user.value?.username) return
+  user.value = await getUserProfile(user.value.username)
+  localStorage.setItem('user', JSON.stringify(user.value))
+  settings.value = getStoredSettings()
+}
+
 const refreshArtworks = async () => {
   if (!user.value?.username) return
   artworks.value = await getArtistArtworks(user.value.username)
+}
+
+const refreshCommissions = async () => {
+  if (!user.value?.username) return
+  commissions.value = await getArtistCommissions(user.value.username)
 }
 
 const handleDelete = async (id) => {
@@ -353,7 +479,7 @@ const resetUploadForm = () => {
     title: '',
     description: '',
     price: '',
-    category: 'Anime',
+    category: categories[0],
     saleType: 'sale',
   }
   selectedFile.value = null
@@ -409,6 +535,39 @@ const startAuction = async (artwork) => {
   }
 }
 
+const changeCommissionStatus = async (id, status) => {
+  try {
+    await updateCommissionStatus(id, status)
+    await refreshCommissions()
+  } catch (error) {
+    console.error(error)
+  }
+}
+
+const saveSettings = async () => {
+  try {
+    applyTheme(settings.value.theme)
+    localStorage.setItem('fraction-settings', JSON.stringify(settings.value))
+
+    if (user.value?.username) {
+      user.value = await updateUserSettings(user.value.username, settings.value)
+      localStorage.setItem('user', JSON.stringify(user.value))
+    }
+
+    settingsMessage.value = 'Settings saved.'
+    setTimeout(() => {
+      settingsMessage.value = ''
+    }, 2000)
+  } catch (error) {
+    console.error(error)
+  }
+}
+
+const formatDate = (date) => {
+  if (!date) return 'Flexible'
+  return new Date(date).toLocaleDateString()
+}
+
 const openEditModal = (artwork) => {
   editingArtwork.value = { ...artwork }
 }
@@ -437,6 +596,10 @@ onMounted(async () => {
   }
 
   user.value = JSON.parse(storedUser)
+  settings.value = getStoredSettings()
+  applyTheme(settings.value.theme)
+  await refreshUser()
   await refreshArtworks()
+  await refreshCommissions()
 })
 </script>

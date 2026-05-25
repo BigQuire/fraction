@@ -25,6 +25,17 @@ const artworkSchema = new mongoose.Schema({
 
   highestBidder: { type: String, default: '', },
 
+  autoBids: [
+    {
+      username: { type: String, required: true },
+      maxBid: { type: Number, required: true },
+      active: { type: Boolean, default: true },
+      createdAt: { type: Date, default: Date.now },
+    },
+  ],
+
+  discountPercent: { type: Number, default: 0 },
+
   owner: { type: String, },
 })
 

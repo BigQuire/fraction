@@ -44,3 +44,9 @@ export const placeBid = async (id, username, bidAmount) => {
   const response = await axios.put(`${API_URL}/${id}/bid`, {username, bidAmount,})
   return response.data
 }
+
+export const setAutoBid = async (id, username, maxBid) => {
+
+  const response = await axios.put(`${API_URL}/${id}/auto-bid`, { username, maxBid })
+  return response.data
+}
