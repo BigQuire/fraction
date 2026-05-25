@@ -76,7 +76,7 @@
           :image="getArtworkImageUrl(artwork.imageUrl)"
           :title="artwork.title"
           :artist="artwork.artist"
-          :price="artwork.currentBid || artwork.price"
+          :price="artwork.currentBid || 1"
           :saleType="artwork.saleType"
           :id="artwork._id"
         />

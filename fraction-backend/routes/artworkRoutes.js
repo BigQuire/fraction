@@ -11,6 +11,7 @@ const Artwork = require('../models/Artwork')
 const User = require('../models/User')
 
 const BID_INCREMENT = 10
+const STARTING_BID = 1
 const RESALE_COOLDOWN_DAYS = 7
 
 const getSellerUsername = (artwork) => artwork.owner || artwork.artist
@@ -299,8 +300,17 @@ router.put('/:id/list', async (req, res) => {
       })
     }
 
-    artwork.price = Number(price || artwork.price)
     artwork.saleType = saleType || 'sale'
+
+    if (artwork.saleType === 'bid') {
+      artwork.currentBid = STARTING_BID
+      artwork.highestBidder = ''
+      artwork.autoBids = []
+      artwork.bidEndTime = new Date(Date.now() + 24 * 60 * 60 * 1000)
+    } else {
+      artwork.price = Number(price || artwork.price)
+    }
+
     await artwork.save()
     await refreshUserNetWorth(username)
 

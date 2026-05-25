@@ -123,7 +123,9 @@ onMounted(async () => {
   }
 })
 
-const displayPrice = (artwork) => artwork.currentBid || artwork.price
+const displayPrice = (artwork) => artwork.saleType === 'bid'
+  ? artwork.currentBid || 1
+  : artwork.price
 
 const isMarketplaceListing = (artwork) => {
   const listedSaleTypes = ['sale', 'bid', 'both']

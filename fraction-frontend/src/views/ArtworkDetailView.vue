@@ -87,7 +87,7 @@
             <div class="mb-5">
               <p class="text-sm text-neutral-500">Current Highest Bid</p>
               <h2 class="mt-2 text-4xl font-black text-rose-200">
-                {{ formatCredits(artwork.currentBid || artwork.price) }}
+                {{ formatCredits(artwork.currentBid || 1) }}
               </h2>
               <p class="mt-2 text-sm text-neutral-500">
                 Highest Bidder: {{ artwork.highestBidder || 'None yet' }}

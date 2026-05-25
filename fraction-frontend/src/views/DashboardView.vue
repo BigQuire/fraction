@@ -397,7 +397,7 @@ const ArtworkGrid = defineComponent({
               image: getArtworkImageUrl(artwork.imageUrl),
               title: artwork.title,
               artist: artwork.artist,
-              price: artwork.currentBid || artwork.price,
+              price: artwork.saleType === 'bid' ? artwork.currentBid || 1 : artwork.price,
               saleType: artwork.saleType,
             }),
             props.showActions
@@ -623,7 +623,8 @@ const startAuction = async (artwork) => {
     const updatedArtwork = {
       ...artwork,
       saleType: 'bid',
-      currentBid: artwork.currentBid || artwork.price,
+      currentBid: 1,
+      highestBidder: '',
       bidEndTime: new Date(Date.now() + 24 * 60 * 60 * 1000),
     }
 
