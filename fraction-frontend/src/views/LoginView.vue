@@ -1,49 +1,57 @@
 <template>
-  <div class="min-h-screen grid grid-cols-1 lg:grid-cols-2">
-    <div class="hidden lg:flex items-center justify-center bg-black relative">
-      <video autoplay muted loop class="absolute w-full h-full object-cover">
+  <main class="grid min-h-screen grid-cols-1 lg:grid-cols-2">
+    <section class="relative hidden overflow-hidden bg-black lg:block">
+      <video autoplay muted loop playsinline class="absolute inset-0 h-full w-full object-cover">
         <source src="/src/assets/fraction-video.mp4" type="video/mp4" />
       </video>
-
-      <div class="relative z-10 text-center px-10">
-        <h1 class="text-5xl font-bold mb-6 text-white">
-         Fraction
-        </h1>
-
-        <p class="text-gray-300 text-xl">
-          Collect rare hand-drawn digital art.
-        </p>
+      <div class="absolute inset-0 bg-gradient-to-r from-black/85 via-black/55 to-black/20"></div>
+      <div class="relative flex h-full items-end p-12">
+        <div>
+          <p class="text-sm font-bold uppercase tracking-[0.28em] text-amber-200">Fraction</p>
+          <h1 class="mt-4 max-w-xl text-5xl font-black leading-tight text-white">
+            Your collection deserves a beautiful command center.
+          </h1>
+        </div>
       </div>
-    </div>
+    </section>
 
-    <div class="flex items-center justify-center bg-[#0F0F0F] p-10">
-      <div class="bg-[#1A1A1A] p-10 rounded-2xl w-full max-w-md">
-        <h2 class="text-4xl font-bold mb-8">Login</h2>
+    <section class="flex items-center justify-center px-5 py-14">
+      <div class="w-full max-w-md">
+        <router-link to="/" class="mb-8 inline-flex text-sm font-semibold text-neutral-400 transition hover:text-white">
+          Back to home
+        </router-link>
 
-        <form class="space-y-6">
-          <input v-model="email" type="email" placeholder="Email" class="w-full p-4 rounded-xl bg-black border border-gray-700"/>
+        <div class="glass-panel rounded-2xl p-8">
+          <p class="text-sm font-bold uppercase tracking-[0.28em] text-amber-200">Welcome back</p>
+          <h2 class="mt-3 text-4xl font-black text-white">Login</h2>
 
-          <input v-model="password" type="password" placeholder="Password" class="w-full p-4 rounded-xl bg-black border border-gray-700"/>
+          <form class="mt-8 space-y-5" @submit.prevent="handleLogin">
+            <input v-model="email" type="email" placeholder="Email" class="field" required />
+            <input v-model="password" type="password" placeholder="Password" class="field" required />
 
-          <div class="flex flex-col gap-4">
-            <router-link to="/dashboard" class="w-full">
-              <button @click="handleLogin" class="w-full bg-purple-600 hover:bg-purple-700 py-4 rounded-xl font-bold">
-              Login
-              </button>
+            <p v-if="errorMessage" class="text-sm font-semibold text-rose-300">
+              {{ errorMessage }}
+            </p>
+
+            <button class="premium-button w-full" type="submit" :disabled="isSubmitting">
+              {{ isSubmitting ? 'Logging in...' : 'Login' }}
+            </button>
+
+            <router-link to="/" class="secondary-button w-full">
+              Continue as Guest
             </router-link>
-            
+          </form>
 
-            <router-link to="/" class="w-full">
-              <button class="w-full bg-gray-800 hover:bg-gray-700 py-4 rounded-xl font-bold">
-                Continue as Guest
-              </button>
+          <p class="mt-6 text-center text-sm text-neutral-400">
+            Don't have an account?
+            <router-link to="/register" class="font-semibold text-amber-200 hover:text-amber-100">
+              Register here
             </router-link>
-          </div>
-          <div><router-link to="/register">Don't have an account? Register here</router-link></div>
-        </form>
+          </p>
+        </div>
       </div>
-    </div>
-  </div>
+    </section>
+  </main>
 </template>
 
 <script setup>
@@ -54,12 +62,15 @@ import { useRouter } from 'vue-router'
 
 const email = ref('')
 const password = ref('')
+const errorMessage = ref('')
+const isSubmitting = ref(false)
 const router = useRouter()
 
 const handleLogin = async () => {
+  isSubmitting.value = true
+  errorMessage.value = ''
 
   try {
-
     const userData = {
       email: email.value,
       password: password.value,
@@ -67,24 +78,12 @@ const handleLogin = async () => {
 
     const response = await loginUser(userData)
 
-    console.log(response)
-
-    // Save logged in user
-    localStorage.setItem(
-      'user',
-      JSON.stringify(response.user)
-    )
-
-    // Redirect to dashboard
+    localStorage.setItem('user', JSON.stringify(response.user))
     router.push('/dashboard')
-
   } catch (error) {
-
-    console.error(error)
-
-    alert('Invalid Email or Password')
-
+    errorMessage.value = error.response?.data?.message || 'Invalid email or password.'
+  } finally {
+    isSubmitting.value = false
   }
-
 }
 </script>

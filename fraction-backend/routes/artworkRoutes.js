@@ -42,20 +42,15 @@ router.post(
   async (req, res) => {
 
     try {
-      console.log('File:')
-      console.log(req.file)
-      console.log('Body:')
-      console.log(req.body)
       if(!req.file){
         return res.status(400).json({
           error: 'No file uploaded'
         })
       }
 
-      const {title, artist, description, price, saleType,} = req.body
+      const {title, artist, description, price, saleType, category,} = req.body
 
-      const artwork = new Artwork({title, artist, description, price, saleType, imageUrl: req.file.path,})
-      console.log(req.file)
+      const artwork = new Artwork({title, artist, description, price, saleType, category, imageUrl: req.file.path,})
       await artwork.save()
 
       res.status(201).json({
@@ -63,7 +58,6 @@ router.post(
         artwork,
       })
     } catch (error) {
-      console.log('Upload error:')
       console.log(error)
 
       res.status(500).json({
@@ -73,10 +67,12 @@ router.post(
   }
 )
 
-router.get('/:id', async (req, res) => {
+router.get('/artist/:artist', async (req, res) => {
   try {
-    const artwork = await Artwork.findById(req.params.id)
-    res.status(200).json(artwork)
+    const artworks = await Artwork.find({
+      artist: req.params.artist,
+    })
+    res.status(200).json(artworks)
   } catch (error) {
     console.log(error)
 
@@ -86,12 +82,10 @@ router.get('/:id', async (req, res) => {
   }
 })
 
-router.get('/artist/:artist', async (req, res) => {
+router.get('/:id', async (req, res) => {
   try {
-    const artworks = await Artwork.find({
-      artist: req.params.artist,
-    })
-    res.status(200).json(artworks)
+    const artwork = await Artwork.findById(req.params.id)
+    res.status(200).json(artwork)
   } catch (error) {
     console.log(error)
 

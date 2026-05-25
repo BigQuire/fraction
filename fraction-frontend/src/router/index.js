@@ -37,13 +37,7 @@ const routes = [
     path: '/register',
     name: 'register',
     component: RegisterView,
-  },
-  {
-    path: '/artwork/:id',
-    name: 'artwork-detail',
-    component: ArtworkDetailView,
   }
-
 ]
 
 const router = createRouter({

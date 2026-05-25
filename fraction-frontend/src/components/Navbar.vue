@@ -1,37 +1,58 @@
 <template>
-  <nav class="bg-black border-b border-gray-800 px-8 py-4 flex justify-between items-center">
-
-    <router-link to="/" class="absolute transform -translate-x-1/2">
+  <header class="sticky top-0 z-40 border-b border-white/10 bg-black/75 backdrop-blur-xl">
+    <nav class="page-shell flex h-20 items-center justify-between">
+    <router-link to="/" class="flex items-center gap-3">
       <img
         src="/src/assets/fraction-logo.png"
         alt="Fraction Logo"
-        class="w-24 h-auto"
+        class="h-11 w-auto"
       />
+      <span class="hidden text-lg font-black tracking-wide text-white sm:block">Fraction</span>
     </router-link>
 
-    <div class="flex gap-10 text-white text-lg font-bold">
-      <router-link to="/" class="right-2">Hom</router-link>
-      <router-link to="/" class="right-2">Home</router-link>
-      <router-link to="/marketplace" class="left-2">Marketplace</router-link>
-      <router-link to="/dashboard" class="left-2">Dashboard</router-link>
-    </div>
-    <div v-if="!user">
-      <router-link to="/login">
-        <button class="bg-purple-600 hover:bg-purple-700 px-8 py-3 rounded-xl font-semibold transition">
-          Login
-        </button>
+    <div class="hidden items-center gap-2 rounded-full border border-white/10 bg-white/5 p-1 text-sm font-semibold text-neutral-300 md:flex">
+      <router-link
+        v-for="item in navItems"
+        :key="item.to"
+        :to="item.to"
+        class="rounded-full px-5 py-2 transition hover:text-white"
+        :class="$route.path === item.to ? 'bg-white text-neutral-950' : ''"
+      >
+        {{ item.label }}
       </router-link>
     </div>
-    <div v-else class="flex items-center gap-4">
-      <router-link to="/dashboard">
-        <img src="" alt="Profile Picture" class="w-10 h-10 rounded-full object-cover"/>
+
+    <div v-if="!user" class="flex items-center gap-3">
+      <router-link to="/register" class="hidden text-sm font-semibold text-neutral-300 transition hover:text-white sm:block">
+        Register
+      </router-link>
+      <router-link to="/login" class="premium-button">
+          Login
+      </router-link>
+    </div>
+
+    <div v-else class="flex items-center gap-3">
+      <router-link to="/dashboard" class="hidden text-sm font-semibold text-neutral-300 transition hover:text-white sm:block">
+        Dashboard
+      </router-link>
+      <router-link to="/dashboard" class="flex h-11 w-11 items-center justify-center rounded-full border border-amber-200/30 bg-amber-200/15 text-sm font-black text-amber-100">
+        {{ userInitial }}
       </router-link>
     </div>
   </nav>
+  </header>
 </template>
 
 <script setup>
 import { computed } from 'vue'
+import { useRoute } from 'vue-router'
+
+const $route = useRoute()
+
+const navItems = [
+  { to: '/', label: 'Home' },
+  { to: '/marketplace', label: 'Marketplace' },
+]
 
 const user = computed(() => {
   return JSON.parse(
@@ -39,4 +60,7 @@ const user = computed(() => {
   )
 })
 
+const userInitial = computed(() => {
+  return user.value?.username?.charAt(0)?.toUpperCase() || 'U'
+})
 </script>
