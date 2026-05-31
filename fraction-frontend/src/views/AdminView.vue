@@ -1,8 +1,17 @@
 <template>
   <main class="page-shell min-h-screen py-12">
-    <div class="mb-10">
-      <p class="text-sm font-bold uppercase tracking-[0.28em] text-amber-200">Admin Dashboard</p>
-      <h1 class="mt-3 text-5xl font-black text-white">Collectibles Platform Control</h1>
+    <div class="mb-10 flex flex-col justify-between gap-4 md:flex-row md:items-end">
+      <div>
+        <p class="text-sm font-bold uppercase tracking-[0.28em] text-amber-200">Admin Dashboard</p>
+        <h1 class="mt-3 text-5xl font-black text-white">Collectibles Platform Control</h1>
+      </div>
+      <button
+        v-if="isAdmin"
+        class="rounded-2xl border border-rose-300/20 bg-rose-500/10 px-5 py-3 text-sm font-bold text-rose-100 transition hover:bg-rose-500/20"
+        @click="handleLogout"
+      >
+        Logout
+      </button>
     </div>
 
     <div v-if="!isAdmin" class="glass-panel max-w-md rounded-2xl p-6">
@@ -105,6 +114,7 @@
 
 <script setup>
 import { computed, onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import {
   createAdminGiveaway,
   fulfillAdminShippingRequest,
@@ -116,6 +126,7 @@ import {
 } from '../services/adminService'
 
 const products = ref([])
+const router = useRouter()
 const verificationRequests = ref([])
 const shippingRequests = ref([])
 const activeSection = ref('products')
@@ -170,6 +181,12 @@ const handleCreateGiveaway = async () => {
 const handleFulfillShipping = async (username, shipmentId) => {
   await fulfillAdminShippingRequest(username, shipmentId)
   await loadAdminData()
+}
+
+const handleLogout = () => {
+  localStorage.removeItem('user')
+  localStorage.removeItem('admin-token')
+  router.push('/login')
 }
 
 onMounted(loadAdminData)
