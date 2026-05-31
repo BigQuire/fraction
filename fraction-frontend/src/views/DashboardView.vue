@@ -297,12 +297,19 @@
               >
                 Ship Selected
               </button>
+              <button
+                class="secondary-button"
+                :disabled="!selectedSellableInventoryItems.length"
+                @click="handleSellInventory"
+              >
+                Sell Gacha Items
+              </button>
             </div>
           </div>
 
-          <div v-if="inventoryItems.length" class="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+          <div v-if="sortedInventoryItems.length" class="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
             <article
-              v-for="item in inventoryItems"
+              v-for="item in sortedInventoryItems"
               :key="item._id"
               class="glass-panel rounded-2xl p-5"
               :class="selectedInventoryItemIds.includes(item._id) ? 'border-amber-200/40' : ''"
@@ -315,11 +322,20 @@
                   :checked="selectedInventoryItemIds.includes(item._id)"
                   @change="toggleInventorySelection(item._id)"
                 />
+                <img
+                  v-if="item.imageUrl"
+                  :src="item.imageUrl"
+                  :alt="item.name"
+                  class="h-20 w-20 rounded-2xl object-cover"
+                />
                 <div class="min-w-0">
                   <p class="text-xs font-bold uppercase tracking-[0.2em] text-amber-200">{{ item.rarity }}</p>
                   <h3 class="mt-2 text-xl font-black text-white">{{ item.name }}</h3>
                   <p class="mt-2 text-sm text-neutral-400">{{ item.description || item.source }}</p>
                   <div class="mt-4 flex flex-wrap gap-2">
+                    <span v-if="item.source === 'gacha'" class="rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-1 text-xs font-bold text-emerald-100">
+                      Sellable
+                    </span>
                     <span class="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-bold text-neutral-300">
                       {{ item.source }}
                     </span>
@@ -336,6 +352,33 @@
             <h2 class="text-3xl font-black text-white">Inventory is empty</h2>
             <p class="mx-auto mt-3 max-w-xl text-neutral-400">
               Gacha prizes and purchased products will appear here.
+            </p>
+          </div>
+        </section>
+
+        <section v-else-if="activeSection === 'shipping'" class="space-y-5">
+          <article v-for="shipment in user?.shipments || []" :key="shipment._id" class="glass-panel rounded-2xl p-5">
+            <div class="flex flex-col justify-between gap-5 lg:flex-row lg:items-start">
+              <div>
+                <p class="text-sm font-bold uppercase tracking-[0.2em] text-amber-200">{{ shipment.status }}</p>
+                <h2 class="mt-2 text-2xl font-black text-white">{{ shipment.itemName }}</h2>
+                <p class="mt-2 text-neutral-400">{{ shipment.source }} item requested for shipment.</p>
+              </div>
+              <div class="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-neutral-300 lg:min-w-80">
+                <p class="font-black text-white">{{ shipment.shippingDetails?.fullName }}</p>
+                <p class="mt-2">{{ shipment.shippingDetails?.phone }}</p>
+                <p class="mt-2">{{ shipment.shippingDetails?.addressLine1 }}</p>
+                <p v-if="shipment.shippingDetails?.addressLine2">{{ shipment.shippingDetails.addressLine2 }}</p>
+                <p>{{ shipment.shippingDetails?.city }}, {{ shipment.shippingDetails?.state }} {{ shipment.shippingDetails?.postalCode }}</p>
+                <p>{{ shipment.shippingDetails?.country }}</p>
+              </div>
+            </div>
+          </article>
+
+          <div v-if="!user?.shipments?.length" class="glass-panel rounded-2xl p-10 text-center">
+            <h2 class="text-3xl font-black text-white">No shipments yet</h2>
+            <p class="mx-auto mt-3 max-w-xl text-neutral-400">
+              Items shipped from inventory will appear here with fulfilment details.
             </p>
           </div>
         </section>
@@ -379,7 +422,7 @@
                 <p class="mt-3 text-sm text-neutral-500">Prize: {{ giveaway.prize }}</p>
               </div>
               <button class="premium-button" @click="joinEvent(giveaway._id)">
-                Join for {{ giveaway.ticketCost }} ticket
+                Join for 1 ticket
               </button>
             </div>
           </article>
@@ -569,6 +612,7 @@ import {
   addWalletBalance,
   getUserProfile,
   requestSellerVerification,
+  sellInventoryItems,
   shipInventoryItems,
   updateUserProfile,
   updateUserSettings,
@@ -700,6 +744,7 @@ const navItems = [
   { key: 'orders', label: 'Orders' },
   { key: 'wishlist', label: 'Wishlist' },
   { key: 'inventory', label: 'Inventory' },
+  { key: 'shipping', label: 'Shipping' },
   { key: 'purchases', label: 'Purchases' },
   { key: 'giveaways', label: 'Giveaways' },
   { key: 'profile', label: 'Profile' },
@@ -722,7 +767,31 @@ const activeBidArtworks = computed(() => artworks.value.filter((artwork) => artw
 
 const wishlistArtworks = computed(() => user.value?.wishlist || [])
 const inventoryItems = computed(() => user.value?.inventory || [])
+const sortedInventoryItems = computed(() => {
+  const rarityOrder = {
+    Legendary: 1,
+    Epic: 2,
+    Rare: 3,
+    Common: 4,
+    Purchased: 5,
+  }
+
+  return [...inventoryItems.value].sort((a, b) => {
+    const statusSort = a.status === b.status ? 0 : a.status === 'stored' ? -1 : 1
+    if (statusSort) return statusSort
+
+    const raritySort = (rarityOrder[a.rarity] || 99) - (rarityOrder[b.rarity] || 99)
+    if (raritySort) return raritySort
+
+    return new Date(b.acquiredAt || 0) - new Date(a.acquiredAt || 0)
+  })
+})
 const storedInventoryItems = computed(() => inventoryItems.value.filter((item) => item.status === 'stored'))
+const selectedSellableInventoryItems = computed(() => {
+  return inventoryItems.value.filter(
+    (item) => selectedInventoryItemIds.value.includes(item._id) && item.source === 'gacha' && item.status === 'stored'
+  )
+})
 
 const wishlistNotifications = computed(() => {
   return wishlistArtworks.value.filter(
@@ -766,6 +835,7 @@ const sectionTitle = computed(() => {
     orders: 'Orders',
     wishlist: 'Wishlist',
     inventory: 'Inventory',
+    shipping: 'Shipping',
     purchases: 'Purchases',
     giveaways: 'Giveaways',
     profile: 'Profile',
@@ -955,6 +1025,27 @@ const handleShipInventory = async () => {
   } catch (error) {
     inventoryShipMessage.value = error.response?.data?.error || 'Could not ship inventory items.'
     inventoryShipError.value = true
+  }
+}
+
+const handleSellInventory = async () => {
+  const sellableIds = selectedSellableInventoryItems.value.map((item) => item._id)
+
+  if (!sellableIds.length) {
+    setActionMessage('Select at least one gacha item to sell.', true)
+    return
+  }
+
+  try {
+    const result = await sellInventoryItems(user.value.username, sellableIds)
+    user.value = result.user
+    localStorage.setItem('user', JSON.stringify(user.value))
+    selectedInventoryItemIds.value = selectedInventoryItemIds.value.filter(
+      (id) => !sellableIds.includes(id)
+    )
+    setActionMessage(`${formatCredits(result.earnedCredits)} added and ${result.ticketsEarned} ticket earned.`)
+  } catch (error) {
+    setActionMessage(error.response?.data?.error || 'Could not sell inventory items.', true)
   }
 }
 

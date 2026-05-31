@@ -11,19 +11,34 @@
       <router-link to="/login" class="premium-button mt-6">Go to Login</router-link>
     </div>
 
-    <section v-else class="space-y-8">
-      <div class="glass-panel rounded-2xl p-6">
+    <section v-else class="grid gap-8 lg:grid-cols-[240px_1fr]">
+      <aside class="glass-panel h-fit rounded-2xl p-4 lg:sticky lg:top-28">
+        <nav class="grid grid-cols-2 gap-2 lg:grid-cols-1">
+          <button
+            v-for="item in adminSections"
+            :key="item.key"
+            class="rounded-2xl px-4 py-3 text-left text-sm font-bold transition"
+            :class="activeSection === item.key ? 'bg-white text-neutral-950' : 'text-neutral-300 hover:bg-white/10 hover:text-white'"
+            @click="activeSection = item.key"
+          >
+            {{ item.label }}
+          </button>
+        </nav>
+      </aside>
+
+      <section class="space-y-8">
+      <div v-if="activeSection === 'giveaways'" class="glass-panel rounded-2xl p-6">
         <h2 class="text-2xl font-black text-white">Create Giveaway</h2>
         <form class="mt-5 grid gap-4 md:grid-cols-2" @submit.prevent="handleCreateGiveaway">
           <input v-model="giveaway.title" class="field" placeholder="Event title" required />
           <input v-model="giveaway.prize" class="field" placeholder="Prize" required />
-          <input v-model.number="giveaway.ticketCost" class="field" type="number" min="1" placeholder="Ticket cost" />
+          <input v-model.number="giveaway.ticketCost" class="field" type="number" min="1" placeholder="1 ticket per entry" disabled />
           <textarea v-model="giveaway.description" class="field md:col-span-2" placeholder="Description"></textarea>
           <button class="premium-button w-fit" type="submit">Create Giveaway</button>
         </form>
       </div>
 
-      <div class="glass-panel rounded-2xl p-6">
+      <div v-else-if="activeSection === 'verification'" class="glass-panel rounded-2xl p-6">
         <h2 class="text-2xl font-black text-white">Seller Verification Requests</h2>
         <div class="mt-5 grid gap-4">
           <article v-for="request in verificationRequests" :key="request._id" class="rounded-2xl border border-white/10 bg-white/5 p-4">
@@ -38,7 +53,7 @@
         </div>
       </div>
 
-      <div class="glass-panel rounded-2xl p-6">
+      <div v-else-if="activeSection === 'products'" class="glass-panel rounded-2xl p-6">
         <h2 class="text-2xl font-black text-white">Product Moderation</h2>
         <div class="mt-5 grid gap-4">
           <article v-for="product in products" :key="product._id" class="rounded-2xl border border-white/10 bg-white/5 p-4">
@@ -55,6 +70,35 @@
           </article>
         </div>
       </div>
+
+      <div v-else-if="activeSection === 'shipping'" class="glass-panel rounded-2xl p-6">
+        <h2 class="text-2xl font-black text-white">Shipping Requests</h2>
+        <div class="mt-5 grid gap-4">
+          <article v-for="request in shippingRequests" :key="request._id" class="rounded-2xl border border-white/10 bg-white/5 p-4">
+            <div class="flex flex-col justify-between gap-4 lg:flex-row lg:items-start">
+              <div>
+                <p class="font-black text-white">{{ request.itemName }}</p>
+                <p class="mt-1 text-sm text-neutral-400">User: {{ request.username }} | {{ request.source }}</p>
+                <p class="mt-3 text-sm text-neutral-300">
+                  {{ request.shippingDetails?.fullName }} - {{ request.shippingDetails?.phone }}
+                </p>
+                <p class="mt-1 text-sm text-neutral-400">
+                  {{ request.shippingDetails?.addressLine1 }},
+                  {{ request.shippingDetails?.city }},
+                  {{ request.shippingDetails?.state }}
+                  {{ request.shippingDetails?.postalCode }},
+                  {{ request.shippingDetails?.country }}
+                </p>
+              </div>
+              <button class="secondary-button px-4 py-2" @click="handleFulfillShipping(request.username, request._id)">
+                Mark Fulfilled
+              </button>
+            </div>
+          </article>
+          <p v-if="!shippingRequests.length" class="text-neutral-400">No pending shipping requests.</p>
+        </div>
+      </div>
+      </section>
     </section>
   </main>
 </template>
@@ -63,7 +107,9 @@
 import { computed, onMounted, ref } from 'vue'
 import {
   createAdminGiveaway,
+  fulfillAdminShippingRequest,
   getAdminProducts,
+  getAdminShippingRequests,
   getVerificationRequests,
   removeAdminProduct,
   reviewVerificationRequest,
@@ -71,12 +117,20 @@ import {
 
 const products = ref([])
 const verificationRequests = ref([])
+const shippingRequests = ref([])
+const activeSection = ref('products')
 const giveaway = ref({
   title: '',
   description: '',
   prize: '',
   ticketCost: 1,
 })
+const adminSections = [
+  { key: 'products', label: 'Products' },
+  { key: 'verification', label: 'Verification' },
+  { key: 'giveaways', label: 'Giveaways' },
+  { key: 'shipping', label: 'Shipping' },
+]
 
 const storedUser = computed(() => {
   try {
@@ -92,6 +146,7 @@ const loadAdminData = async () => {
   if (!isAdmin.value) return
   products.value = await getAdminProducts()
   verificationRequests.value = await getVerificationRequests()
+  shippingRequests.value = await getAdminShippingRequests()
 }
 
 const handleRemoveProduct = async (id) => {
@@ -110,6 +165,11 @@ const handleVerification = async (username, status) => {
 const handleCreateGiveaway = async () => {
   await createAdminGiveaway(giveaway.value)
   giveaway.value = { title: '', description: '', prize: '', ticketCost: 1 }
+}
+
+const handleFulfillShipping = async (username, shipmentId) => {
+  await fulfillAdminShippingRequest(username, shipmentId)
+  await loadAdminData()
 }
 
 onMounted(loadAdminData)

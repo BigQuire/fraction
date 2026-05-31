@@ -80,6 +80,7 @@ const navItems = [
   { to: '/', label: 'Home' },
   { to: '/marketplace', label: 'Marketplace' },
   { to: '/gacha', label: 'Gacha' },
+  { to: '/giveaway', label: 'Giveaway' },
 ]
 
 const user = computed(() => {

@@ -6,16 +6,23 @@ const User = require('../models/User')
 const GACHA_COST = 100
 const GACHA_DRAW_COUNTS = [1, 10, 50, 100]
 const gachaPrizePool = [
-  { name: 'Sealed Card Pack', rarity: 'Common', chance: 45, color: 'text-neutral-300', description: 'A starter collectible pack for your collection.' },
-  { name: 'Limited Figure Voucher', rarity: 'Rare', chance: 30, color: 'text-sky-200', description: 'A rare voucher placeholder for future fulfilment.' },
-  { name: 'Premium Storage Case', rarity: 'Epic', chance: 18, color: 'text-violet-200', description: 'An epic accessory prize for collectors.' },
-  { name: 'Golden Collector Ticket', rarity: 'Legendary', chance: 7, color: 'text-amber-200', description: 'A top-tier prize placeholder for the detailed gacha system later.' },
+  { name: 'Sealed Card Pack', rarity: 'Common', chance: 45, color: 'text-neutral-300', description: 'A starter collectible pack for your collection.', imageUrl: '' }, // Replace imageUrl with your common prize image later.
+  { name: 'Limited Figure Voucher', rarity: 'Rare', chance: 30, color: 'text-sky-200', description: 'A rare voucher placeholder for future fulfilment.', imageUrl: '' }, // Replace imageUrl with your rare prize image later.
+  { name: 'Premium Storage Case', rarity: 'Epic', chance: 18, color: 'text-violet-200', description: 'An epic accessory prize for collectors.', imageUrl: '' }, // Replace imageUrl with your epic prize image later.
+  { name: 'Golden Collector Ticket', rarity: 'Legendary', chance: 7, color: 'text-amber-200', description: 'A top-tier prize placeholder for the detailed gacha system later.', imageUrl: '' }, // Replace imageUrl with your legendary prize image later.
 ]
+const resaleValues = {
+  Common: 20,
+  Rare: 55,
+  Epic: 140,
+  Legendary: 400,
+}
 
 const populateUser = (query) => query
   .populate('wishlist')
   .populate('purchases.product')
   .populate('inventory.product')
+  .populate('shipments.product')
 
 const pickGachaPrize = () => {
   const roll = Math.random() * 100
@@ -215,6 +222,7 @@ router.post('/:username/gacha-draw', async (req, res) => {
         rarity: prize.rarity,
         source: 'gacha',
         description: prize.description,
+        imageUrl: prize.imageUrl,
         status: 'stored',
       }))
     )
@@ -223,11 +231,75 @@ router.post('/:username/gacha-draw', async (req, res) => {
     await user.populate('wishlist')
     await user.populate('purchases.product')
     await user.populate('inventory.product')
+    await user.populate('shipments.product')
 
     res.status(200).json({
       user,
       prizes,
       totalCost,
+    })
+  } catch (error) {
+    res.status(500).json({
+      error: error.message,
+    })
+  }
+})
+
+router.put('/:username/inventory/sell', async (req, res) => {
+  try {
+    const { itemIds = [] } = req.body
+
+    if (!Array.isArray(itemIds) || !itemIds.length) {
+      return res.status(400).json({
+        error: 'Select at least one gacha item to sell',
+      })
+    }
+
+    const user = await User.findOne({ username: req.params.username })
+
+    if (!user) {
+      return res.status(404).json({
+        message: 'User not found',
+      })
+    }
+
+    const itemIdSet = new Set(itemIds.map(String))
+    const selectedItems = user.inventory.filter((item) =>
+      itemIdSet.has(item._id.toString()) && item.status === 'stored'
+    )
+    const unsellableItem = selectedItems.find((item) => item.source !== 'gacha')
+
+    if (!selectedItems.length) {
+      return res.status(400).json({
+        error: 'Selected items are not available for selling',
+      })
+    }
+
+    if (unsellableItem) {
+      return res.status(400).json({
+        error: 'Marketplace purchases cannot be resold from inventory',
+      })
+    }
+
+    const earnedCredits = selectedItems.reduce(
+      (total, item) => total + Number(resaleValues[item.rarity] || 10),
+      0
+    )
+
+    user.walletBalance += earnedCredits
+    user.tickets += selectedItems.length
+    user.inventory = user.inventory.filter((item) => !itemIdSet.has(item._id.toString()))
+
+    await user.save()
+    await user.populate('wishlist')
+    await user.populate('purchases.product')
+    await user.populate('inventory.product')
+    await user.populate('shipments.product')
+
+    res.status(200).json({
+      user,
+      earnedCredits,
+      ticketsEarned: selectedItems.length,
     })
   } catch (error) {
     res.status(500).json({
@@ -263,11 +335,20 @@ router.put('/:username/inventory/ship', async (req, res) => {
     const itemIdSet = new Set(itemIds.map(String))
     let updatedCount = 0
 
+    const shippedItems = []
+
     user.inventory.forEach((item) => {
       if (itemIdSet.has(item._id.toString()) && item.status === 'stored') {
-        item.status = 'shipping-requested'
-        item.shippedAt = new Date()
-        item.shippingDetails = shippingDetails
+        shippedItems.push({
+          itemName: item.name,
+          rarity: item.rarity,
+          source: item.source,
+          product: item.product,
+          price: item.price,
+          imageUrl: item.imageUrl,
+          status: 'pending-fulfilment',
+          shippingDetails,
+        })
         updatedCount += 1
       }
     })
@@ -278,10 +359,14 @@ router.put('/:username/inventory/ship', async (req, res) => {
       })
     }
 
+    user.inventory = user.inventory.filter((item) => !itemIdSet.has(item._id.toString()))
+    user.shipments.push(...shippedItems)
+
     await user.save()
     await user.populate('wishlist')
     await user.populate('purchases.product')
     await user.populate('inventory.product')
+    await user.populate('shipments.product')
 
     res.status(200).json(user)
   } catch (error) {

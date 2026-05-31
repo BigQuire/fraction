@@ -58,6 +58,12 @@ export const shipInventoryItems = async (username, itemIds, shippingDetails) => 
   return response.data
 }
 
+export const sellInventoryItems = async (username, itemIds) => {
+
+  const response = await axios.put(`${API_URL}/${username}/inventory/sell`, { itemIds })
+  return response.data
+}
+
 export const updateUserProfile = async (username, profile) => {
 
   const response = await axios.put(`${API_URL}/${username}/profile`, profile)

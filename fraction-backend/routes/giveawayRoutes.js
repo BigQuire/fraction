@@ -15,7 +15,8 @@ router.get('/', async (req, res) => {
 
 router.post('/:id/join', async (req, res) => {
   try {
-    const { username } = req.body
+    const { username, entryCount = 1 } = req.body
+    const entries = Number(entryCount)
     const giveaway = await Giveaway.findById(req.params.id)
     const user = await User.findOne({ username })
 
@@ -27,15 +28,23 @@ router.post('/:id/join', async (req, res) => {
       return res.status(404).json({ error: 'User not found' })
     }
 
-    if (user.tickets < giveaway.ticketCost) {
+    if (!Number.isInteger(entries) || entries <= 0) {
+      return res.status(400).json({ error: 'Entry count must be at least 1' })
+    }
+
+    const ticketsNeeded = entries
+
+    if (user.tickets < ticketsNeeded) {
       return res.status(400).json({ error: 'Not enough tickets' })
     }
 
-    user.tickets -= giveaway.ticketCost
-    giveaway.entries.push({
-      username,
-      ticketsUsed: giveaway.ticketCost,
-    })
+    user.tickets -= ticketsNeeded
+    giveaway.entries.push(
+      ...Array.from({ length: entries }, () => ({
+        username,
+        ticketsUsed: 1,
+      }))
+    )
 
     await user.save()
     await giveaway.save()

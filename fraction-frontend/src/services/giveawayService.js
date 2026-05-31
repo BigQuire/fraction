@@ -7,7 +7,7 @@ export const getGiveaways = async () => {
   return response.data
 }
 
-export const joinGiveaway = async (id, username) => {
-  const response = await axios.post(`${API_URL}/${id}/join`, { username })
+export const joinGiveaway = async (id, username, entryCount = 1) => {
+  const response = await axios.post(`${API_URL}/${id}/join`, { username, entryCount })
   return response.data
 }

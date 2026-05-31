@@ -506,6 +506,7 @@ router.put('/:id/purchase', async (req, res) => {
       .populate('wishlist')
       .populate('purchases.product')
       .populate('inventory.product')
+      .populate('shipments.product')
     await refreshUserNetWorth(sellerUsername)
 
     res.status(200).json({

@@ -101,4 +101,50 @@ router.post('/giveaways', requireAdmin, async (req, res) => {
   }
 })
 
+router.get('/shipping-requests', requireAdmin, async (req, res) => {
+  try {
+    const users = await User.find({ 'shipments.status': 'pending-fulfilment' })
+      .select('username email shipments')
+      .sort({ 'shipments.requestedAt': -1 })
+
+    const requests = users.flatMap((user) =>
+      user.shipments
+        .filter((shipment) => shipment.status === 'pending-fulfilment')
+        .map((shipment) => ({
+          ...shipment.toObject(),
+          username: user.username,
+          email: user.email,
+        }))
+    )
+
+    res.status(200).json(requests)
+  } catch (error) {
+    res.status(500).json({ error: error.message })
+  }
+})
+
+router.put('/shipping-requests/:username/:shipmentId/fulfill', requireAdmin, async (req, res) => {
+  try {
+    const user = await User.findOne({ username: req.params.username })
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' })
+    }
+
+    const shipment = user.shipments.id(req.params.shipmentId)
+
+    if (!shipment) {
+      return res.status(404).json({ error: 'Shipment request not found' })
+    }
+
+    shipment.status = 'fulfilled'
+    shipment.fulfilledAt = new Date()
+    await user.save()
+
+    res.status(200).json(shipment)
+  } catch (error) {
+    res.status(500).json({ error: error.message })
+  }
+})
+
 module.exports = router

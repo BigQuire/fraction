@@ -51,6 +51,12 @@
               <p class="mt-3 text-neutral-400">The blind box is opening.</p>
             </div>
             <div v-else-if="lastPrizes.length" class="w-full">
+              <img
+                v-if="featuredPrize.imageUrl"
+                :src="featuredPrize.imageUrl"
+                :alt="featuredPrize.name"
+                class="mx-auto mb-5 h-32 w-32 rounded-2xl object-cover"
+              />
               <p class="text-sm font-bold uppercase tracking-[0.28em]" :class="featuredPrize.color">{{ featuredPrize.rarity }}</p>
               <h3 class="mt-3 text-4xl font-black text-white">{{ featuredPrize.name }}</h3>
               <p class="mt-4 text-neutral-400">{{ featuredPrize.description }}</p>
@@ -63,6 +69,12 @@
                   :style="{ animationDelay: `${Math.min(index, 12) * 60}ms` }"
                 >
                   <p class="text-xs font-bold uppercase tracking-[0.2em]" :class="prize.color">{{ prize.rarity }}</p>
+                  <img
+                    v-if="prize.imageUrl"
+                    :src="prize.imageUrl"
+                    :alt="prize.name"
+                    class="mt-3 h-20 w-full rounded-xl object-cover"
+                  />
                   <p class="mt-2 font-black text-white">{{ prize.name }}</p>
                 </article>
               </div>
@@ -114,10 +126,38 @@ const selectedDrawCount = ref(1)
 const drawOptions = [1, 10, 50, 100]
 
 const prizePool = [
-  { name: 'Sealed Card Pack', rarity: 'Common', chance: 45, color: 'text-neutral-300', description: 'A starter collectible pack for your collection.' },
-  { name: 'Limited Figure Voucher', rarity: 'Rare', chance: 30, color: 'text-sky-200', description: 'A rare voucher placeholder for future fulfilment.' },
-  { name: 'Premium Storage Case', rarity: 'Epic', chance: 18, color: 'text-violet-200', description: 'An epic accessory prize for collectors.' },
-  { name: 'Golden Collector Ticket', rarity: 'Legendary', chance: 7, color: 'text-amber-200', description: 'A top-tier prize placeholder for the detailed gacha system later.' },
+  {
+    name: 'Sealed Card Pack',
+    rarity: 'Common',
+    chance: 45,
+    color: 'text-neutral-300',
+    description: 'A starter collectible pack for your collection.',
+    // imageUrl: '/replace-with-your-common-prize-image.png',
+  },
+  {
+    name: 'Limited Figure Voucher',
+    rarity: 'Rare',
+    chance: 30,
+    color: 'text-sky-200',
+    description: 'A rare voucher placeholder for future fulfilment.',
+    // imageUrl: '/replace-with-your-rare-prize-image.png',
+  },
+  {
+    name: 'Premium Storage Case',
+    rarity: 'Epic',
+    chance: 18,
+    color: 'text-violet-200',
+    description: 'An epic accessory prize for collectors.',
+    // imageUrl: '/replace-with-your-epic-prize-image.png',
+  },
+  {
+    name: 'Golden Collector Ticket',
+    rarity: 'Legendary',
+    chance: 7,
+    color: 'text-amber-200',
+    description: 'A top-tier prize placeholder for the detailed gacha system later.',
+    // imageUrl: '/replace-with-your-legendary-prize-image.png',
+  },
 ]
 
 const totalCost = computed(() => selectedDrawCount.value * boxCost)

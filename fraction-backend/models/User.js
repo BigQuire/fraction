@@ -82,6 +82,30 @@ const userSchema = new mongoose.Schema({
     },
   ],
 
+  shipments: [
+    {
+      itemName: { type: String, required: true },
+      rarity: { type: String, default: '' },
+      source: { type: String, default: '' },
+      product: { type: mongoose.Schema.Types.ObjectId, ref: 'Artwork' },
+      price: { type: Number, default: 0 },
+      imageUrl: { type: String, default: '' },
+      status: { type: String, default: 'pending-fulfilment' },
+      requestedAt: { type: Date, default: Date.now },
+      fulfilledAt: { type: Date },
+      shippingDetails: {
+        fullName: { type: String, default: '' },
+        phone: { type: String, default: '' },
+        addressLine1: { type: String, default: '' },
+        addressLine2: { type: String, default: '' },
+        city: { type: String, default: '' },
+        state: { type: String, default: '' },
+        postalCode: { type: String, default: '' },
+        country: { type: String, default: '' },
+      },
+    },
+  ],
+
   createdAt: { type: Date, default: Date.now, },
 
   artworkNumbers: { type: Number, default: 0, },

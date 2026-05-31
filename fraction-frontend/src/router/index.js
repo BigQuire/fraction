@@ -4,6 +4,7 @@ import HomeView from '../views/HomeView.vue'
 import MarketplaceView from '../views/MarketplaceView.vue'
 import ProductDetailView from '../views/ProductDetailView.vue'
 import GachaView from '../views/GachaView.vue'
+import GiveawayView from '../views/GiveawayView.vue'
 import LoginView from '../views/LoginView.vue'
 import DashboardView from '../views/DashboardView.vue'
 import RegisterView from '@/views/RegisterView.vue'
@@ -34,6 +35,11 @@ const routes = [
     path: '/gacha',
     name: 'gacha',
     component: GachaView,
+  },
+  {
+    path: '/giveaway',
+    name: 'giveaway',
+    component: GiveawayView,
   },
   {
     path: '/login',
