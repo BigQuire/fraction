@@ -46,6 +46,18 @@ export const spendWalletCredits = async (username, amount) => {
   return response.data
 }
 
+export const drawGachaPrizes = async (username, drawCount) => {
+
+  const response = await axios.post(`${API_URL}/${username}/gacha-draw`, { drawCount })
+  return response.data
+}
+
+export const shipInventoryItems = async (username, itemIds, shippingDetails) => {
+
+  const response = await axios.put(`${API_URL}/${username}/inventory/ship`, { itemIds, shippingDetails })
+  return response.data
+}
+
 export const updateUserProfile = async (username, profile) => {
 
   const response = await axios.put(`${API_URL}/${username}/profile`, profile)

@@ -57,6 +57,31 @@ const userSchema = new mongoose.Schema({
     },
   ],
 
+  inventory: [
+    {
+      name: { type: String, required: true },
+      rarity: { type: String, default: 'Common' },
+      source: { type: String, default: 'gacha' },
+      product: { type: mongoose.Schema.Types.ObjectId, ref: 'Artwork' },
+      price: { type: Number, default: 0 },
+      imageUrl: { type: String, default: '' },
+      description: { type: String, default: '' },
+      status: { type: String, default: 'stored' },
+      acquiredAt: { type: Date, default: Date.now },
+      shippedAt: { type: Date },
+      shippingDetails: {
+        fullName: { type: String, default: '' },
+        phone: { type: String, default: '' },
+        addressLine1: { type: String, default: '' },
+        addressLine2: { type: String, default: '' },
+        city: { type: String, default: '' },
+        state: { type: String, default: '' },
+        postalCode: { type: String, default: '' },
+        country: { type: String, default: '' },
+      },
+    },
+  ],
+
   createdAt: { type: Date, default: Date.now, },
 
   artworkNumbers: { type: Number, default: 0, },

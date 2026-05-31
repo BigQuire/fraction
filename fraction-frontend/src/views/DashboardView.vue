@@ -283,6 +283,63 @@
           />
         </section>
 
+        <section v-else-if="activeSection === 'inventory'" class="space-y-6">
+          <div class="glass-panel rounded-2xl p-5">
+            <div class="flex flex-col justify-between gap-4 md:flex-row md:items-center">
+              <div>
+                <p class="text-sm text-neutral-500">Stored Items</p>
+                <h2 class="mt-1 text-3xl font-black text-white">{{ storedInventoryItems.length }} ready to ship</h2>
+              </div>
+              <button
+                class="premium-button"
+                :disabled="!selectedInventoryItemIds.length"
+                @click="showInventoryShipModal = true"
+              >
+                Ship Selected
+              </button>
+            </div>
+          </div>
+
+          <div v-if="inventoryItems.length" class="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+            <article
+              v-for="item in inventoryItems"
+              :key="item._id"
+              class="glass-panel rounded-2xl p-5"
+              :class="selectedInventoryItemIds.includes(item._id) ? 'border-amber-200/40' : ''"
+            >
+              <div class="flex items-start gap-4">
+                <input
+                  v-if="item.status === 'stored'"
+                  type="checkbox"
+                  class="mt-1 h-5 w-5 accent-amber-200"
+                  :checked="selectedInventoryItemIds.includes(item._id)"
+                  @change="toggleInventorySelection(item._id)"
+                />
+                <div class="min-w-0">
+                  <p class="text-xs font-bold uppercase tracking-[0.2em] text-amber-200">{{ item.rarity }}</p>
+                  <h3 class="mt-2 text-xl font-black text-white">{{ item.name }}</h3>
+                  <p class="mt-2 text-sm text-neutral-400">{{ item.description || item.source }}</p>
+                  <div class="mt-4 flex flex-wrap gap-2">
+                    <span class="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-bold text-neutral-300">
+                      {{ item.source }}
+                    </span>
+                    <span class="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-bold text-neutral-300">
+                      {{ item.status }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </article>
+          </div>
+
+          <div v-else class="glass-panel rounded-2xl p-10 text-center">
+            <h2 class="text-3xl font-black text-white">Inventory is empty</h2>
+            <p class="mx-auto mt-3 max-w-xl text-neutral-400">
+              Gacha prizes and purchased products will appear here.
+            </p>
+          </div>
+        </section>
+
         <section v-else-if="activeSection === 'purchases'" class="space-y-5">
           <article v-for="purchase in user?.purchases || []" :key="purchase._id || purchase.createdAt" class="glass-panel rounded-2xl p-5">
             <div class="flex flex-col justify-between gap-4 md:flex-row md:items-start">
@@ -465,6 +522,39 @@
         </form>
       </div>
     </div>
+
+    <div v-if="showInventoryShipModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/75 px-5">
+      <div class="glass-panel w-full max-w-2xl rounded-2xl p-6">
+        <div class="mb-6 flex items-center justify-between gap-4">
+          <h2 class="text-3xl font-black text-white">Ship Inventory</h2>
+          <button class="secondary-button px-4 py-2" @click="showInventoryShipModal = false">Close</button>
+        </div>
+
+        <form class="space-y-4" @submit.prevent="handleShipInventory">
+          <p class="text-sm font-semibold text-amber-100">
+            {{ selectedInventoryItemIds.length }} item{{ selectedInventoryItemIds.length > 1 ? 's' : '' }} selected for demo shipping.
+          </p>
+          <div class="grid gap-4 sm:grid-cols-2">
+            <input v-model="inventoryShippingForm.fullName" class="field" placeholder="Full name" required />
+            <input v-model="inventoryShippingForm.phone" class="field" placeholder="Phone number" required />
+          </div>
+          <input v-model="inventoryShippingForm.addressLine1" class="field" placeholder="Address line 1" required />
+          <input v-model="inventoryShippingForm.addressLine2" class="field" placeholder="Address line 2" />
+          <div class="grid gap-4 sm:grid-cols-3">
+            <input v-model="inventoryShippingForm.city" class="field" placeholder="City" required />
+            <input v-model="inventoryShippingForm.state" class="field" placeholder="State / region" required />
+            <input v-model="inventoryShippingForm.postalCode" class="field" placeholder="Postal code" required />
+          </div>
+          <input v-model="inventoryShippingForm.country" class="field" placeholder="Country" required />
+
+          <p v-if="inventoryShipMessage" class="text-sm font-semibold" :class="inventoryShipError ? 'text-rose-300' : 'text-emerald-300'">
+            {{ inventoryShipMessage }}
+          </p>
+
+          <button class="premium-button" type="submit">Confirm Shipping</button>
+        </form>
+      </div>
+    </div>
   </main>
 </template>
 
@@ -479,6 +569,7 @@ import {
   addWalletBalance,
   getUserProfile,
   requestSellerVerification,
+  shipInventoryItems,
   updateUserProfile,
   updateUserSettings,
 } from '../services/userService'
@@ -578,6 +669,20 @@ const balanceAmount = ref(1000)
 const balanceMessage = ref('')
 const balanceError = ref(false)
 const verificationMessage = ref('')
+const showInventoryShipModal = ref(false)
+const selectedInventoryItemIds = ref([])
+const inventoryShipMessage = ref('')
+const inventoryShipError = ref(false)
+const inventoryShippingForm = ref({
+  fullName: '',
+  phone: '',
+  addressLine1: '',
+  addressLine2: '',
+  city: '',
+  state: '',
+  postalCode: '',
+  country: 'Malaysia',
+})
 const profileForm = ref({
   displayName: '',
   bio: '',
@@ -594,6 +699,7 @@ const navItems = [
   { key: 'commissions', label: 'Messages' },
   { key: 'orders', label: 'Orders' },
   { key: 'wishlist', label: 'Wishlist' },
+  { key: 'inventory', label: 'Inventory' },
   { key: 'purchases', label: 'Purchases' },
   { key: 'giveaways', label: 'Giveaways' },
   { key: 'profile', label: 'Profile' },
@@ -615,6 +721,8 @@ const uploadForm = ref({
 const activeBidArtworks = computed(() => artworks.value.filter((artwork) => artwork.saleType === 'bid' || artwork.saleType === 'both'))
 
 const wishlistArtworks = computed(() => user.value?.wishlist || [])
+const inventoryItems = computed(() => user.value?.inventory || [])
+const storedInventoryItems = computed(() => inventoryItems.value.filter((item) => item.status === 'stored'))
 
 const wishlistNotifications = computed(() => {
   return wishlistArtworks.value.filter(
@@ -657,6 +765,7 @@ const sectionTitle = computed(() => {
     commissions: 'Seller Messages',
     orders: 'Orders',
     wishlist: 'Wishlist',
+    inventory: 'Inventory',
     purchases: 'Purchases',
     giveaways: 'Giveaways',
     profile: 'Profile',
@@ -816,6 +925,36 @@ const handleAddBalance = async () => {
   } catch (error) {
     balanceMessage.value = error.response?.data?.error || 'Could not add balance.'
     balanceError.value = true
+  }
+}
+
+const toggleInventorySelection = (id) => {
+  if (selectedInventoryItemIds.value.includes(id)) {
+    selectedInventoryItemIds.value = selectedInventoryItemIds.value.filter((itemId) => itemId !== id)
+    return
+  }
+
+  selectedInventoryItemIds.value = [...selectedInventoryItemIds.value, id]
+}
+
+const handleShipInventory = async () => {
+  inventoryShipMessage.value = ''
+  inventoryShipError.value = false
+
+  try {
+    user.value = await shipInventoryItems(
+      user.value.username,
+      selectedInventoryItemIds.value,
+      inventoryShippingForm.value
+    )
+    localStorage.setItem('user', JSON.stringify(user.value))
+    selectedInventoryItemIds.value = []
+    showInventoryShipModal.value = false
+    inventoryShipMessage.value = 'Selected inventory items are marked for shipping.'
+    setActionMessage('Selected inventory items are marked for shipping.')
+  } catch (error) {
+    inventoryShipMessage.value = error.response?.data?.error || 'Could not ship inventory items.'
+    inventoryShipError.value = true
   }
 }
 

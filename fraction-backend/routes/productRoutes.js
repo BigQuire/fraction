@@ -467,6 +467,16 @@ router.put('/:id/purchase', async (req, res) => {
       price,
       shippingStatus: 'pending-shipment',
     })
+    buyer.inventory.push({
+      name: artwork.title,
+      rarity: 'Purchased',
+      source: 'purchase',
+      product: artwork._id,
+      price,
+      imageUrl: artwork.imageUrl,
+      description: artwork.description,
+      status: 'stored',
+    })
     await buyer.save()
 
     artwork.stockCount = Math.max(Number(artwork.stockCount ?? 1) - 1, 0)
@@ -495,6 +505,7 @@ router.put('/:id/purchase', async (req, res) => {
     const updatedBuyer = await User.findOne({ username })
       .populate('wishlist')
       .populate('purchases.product')
+      .populate('inventory.product')
     await refreshUserNetWorth(sellerUsername)
 
     res.status(200).json({
