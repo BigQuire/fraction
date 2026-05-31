@@ -139,8 +139,28 @@ const upload = multer({ storage })
 
 router.get('/', async (req, res) => {
   try {
-    const artworks = await Artwork.find()
-    res.status(200).json(artworks)
+    const artworks = await Artwork.find({ removedByAdmin: { $ne: true } }).lean()
+    const sellers = await User.find({
+      username: { $in: artworks.map((artwork) => artwork.owner || artwork.artist) },
+    }).lean()
+    const sellerMap = new Map(sellers.map((seller) => [seller.username, seller]))
+    const rankedArtworks = artworks
+      .map((artwork) => {
+        const seller = sellerMap.get(artwork.owner || artwork.artist)
+        return {
+          ...artwork,
+          sellerRating: seller?.sellerRating || 0,
+          sellerReviewCount: seller?.reviewCount || 0,
+          sellerVerified: seller?.isVerifiedSeller || false,
+        }
+      })
+      .sort((a, b) => {
+        const bScore = (b.sellerVerified ? 2 : 0) + Number(b.sellerRating || 0)
+        const aScore = (a.sellerVerified ? 2 : 0) + Number(a.sellerRating || 0)
+        return bScore - aScore
+      })
+
+    res.status(200).json(rankedArtworks)
   } catch (error) {
     console.log(error)
 
@@ -163,7 +183,18 @@ router.post(
         })
       }
 
-      const {title, artist, description, price, saleType, category,} = req.body
+      const {
+        title,
+        artist,
+        description,
+        price,
+        saleType,
+        category,
+        productType,
+        condition,
+        sealed,
+        authenticityNotes,
+      } = req.body
 
       const artwork = new Artwork({
         title,
@@ -172,9 +203,20 @@ router.post(
         price,
         saleType,
         category,
+        productType,
+        condition,
+        sealed: sealed === 'true' || sealed === true,
+        authenticityNotes,
         imageUrl: req.file.path,
         owner: artist,
         ownedAt: new Date(),
+        priceHistory: [
+          {
+            price: Number(price),
+            event: 'initial-listing',
+            seller: artist,
+          },
+        ],
       })
       await artwork.save()
       await refreshUserNetWorth(artist)
@@ -197,6 +239,7 @@ router.get('/artist/:artist', async (req, res) => {
   try {
     const artworks = await Artwork.find({
       artist: req.params.artist,
+      removedByAdmin: { $ne: true },
     })
     res.status(200).json(artworks)
   } catch (error) {
@@ -212,6 +255,7 @@ router.get('/owner/:owner', async (req, res) => {
   try {
     const artworks = await Artwork.find({
       owner: req.params.owner,
+      removedByAdmin: { $ne: true },
     })
     res.status(200).json(artworks)
   } catch (error) {
@@ -225,8 +269,14 @@ router.get('/owner/:owner', async (req, res) => {
 
 router.get('/:id', async (req, res) => {
   try {
-    const artwork = await Artwork.findById(req.params.id)
-    res.status(200).json(artwork)
+    const artwork = await Artwork.findById(req.params.id).lean()
+    const seller = await User.findOne({ username: artwork?.owner || artwork?.artist }).lean()
+    res.status(200).json({
+      ...artwork,
+      sellerRating: seller?.sellerRating || 0,
+      sellerReviewCount: seller?.reviewCount || 0,
+      sellerVerified: seller?.isVerifiedSeller || false,
+    })
   } catch (error) {
     console.log(error)
 
@@ -309,6 +359,11 @@ router.put('/:id/list', async (req, res) => {
       artwork.bidEndTime = new Date(Date.now() + 24 * 60 * 60 * 1000)
     } else {
       artwork.price = Number(price || artwork.price)
+      artwork.priceHistory.push({
+        price: artwork.price,
+        event: 'listing',
+        seller: username,
+      })
     }
 
     await artwork.save()
@@ -369,8 +424,12 @@ router.put('/:id/purchase', async (req, res) => {
 
     if (seller) {
       seller.walletBalance += price
+      seller.tickets += 1
       await seller.save()
     }
+
+    buyer.tickets += 1
+    await buyer.save()
 
     artwork.previousOwner = sellerUsername
     artwork.owner = username
@@ -383,6 +442,12 @@ router.put('/:id/purchase', async (req, res) => {
     artwork.currentBid = 0
     artwork.highestBidder = ''
     artwork.autoBids = []
+    artwork.priceHistory.push({
+      price,
+      event: 'sale',
+      buyer: username,
+      seller: sellerUsername,
+    })
     await artwork.save()
 
     const updatedBuyer = await refreshUserNetWorth(username)

@@ -45,7 +45,7 @@
             </p>
           </div>
           <button v-if="activeSection === 'collection'" class="premium-button w-fit" @click="showUploadModal = true">
-            Upload Artwork
+            Upload Product
           </button>
         </div>
 
@@ -88,13 +88,13 @@
 
           <div class="glass-panel rounded-2xl p-6">
             <div class="mb-5 flex items-center justify-between">
-              <h2 class="text-2xl font-black text-white">Recent Uploads</h2>
+              <h2 class="text-2xl font-black text-white">Recent Products</h2>
               <button class="text-sm font-bold text-amber-200" @click="activeSection = 'collection'">Manage</button>
             </div>
             <ArtworkGrid
               :artworks="artworks.slice(0, 3)"
-              empty-title="No uploads yet"
-              empty-text="Upload your first artwork to start building your storefront."
+              empty-title="No products yet"
+              empty-text="Upload your first collectible to start building your storefront."
               @edit="openEditModal"
               @delete="handleDelete"
               @auction="startAuction"
@@ -103,19 +103,19 @@
         </section>
 
         <section v-else-if="activeSection === 'store'" class="space-y-6">
-          <p class="text-neutral-400">Preview the artworks currently attached to your public artist profile.</p>
+          <p class="text-neutral-400">Preview the collectible products currently attached to your public seller profile.</p>
           <ArtworkGrid
             :artworks="artworks"
             empty-title="Your store is empty"
-            empty-text="Pieces you upload will appear here for collectors to browse."
+            empty-text="Products you upload will appear here for collectors to browse."
           />
         </section>
 
         <section v-else-if="activeSection === 'collection'" class="space-y-6">
           <ArtworkGrid
             :artworks="artworks"
-            empty-title="No artworks uploaded yet"
-            empty-text="Use the upload button to add a title, category, sale type, and artwork image."
+            empty-title="No products uploaded yet"
+            empty-text="Use the upload button to add a title, category, condition, sale type, and product image."
             show-actions
             @edit="openEditModal"
             @delete="handleDelete"
@@ -148,7 +148,7 @@
                 <span v-else class="text-5xl font-black text-amber-200">{{ userInitial }}</span>
               </div>
               <p class="mt-4 text-sm text-neutral-400">
-                Add an avatar URL, display name, bio, location, and portfolio link.
+                Add an avatar URL, display name, seller bio, location, and store link.
               </p>
             </div>
 
@@ -166,6 +166,24 @@
             </form>
           </div>
 
+          <div class="mt-8 rounded-2xl border border-white/10 bg-white/5 p-5">
+            <div class="flex flex-col justify-between gap-4 md:flex-row md:items-start">
+              <div>
+                <p class="text-sm text-neutral-500">Seller Verification</p>
+                <h3 class="mt-1 text-xl font-black text-white">
+                  {{ user?.isVerifiedSeller ? 'Verified Seller' : verificationStatusLabel }}
+                </h3>
+                <p class="mt-2 text-neutral-400">
+                  Verified sellers receive stronger marketplace placement and more buyer trust.
+                </p>
+              </div>
+              <form class="flex w-full flex-col gap-3 md:max-w-md" @submit.prevent="submitVerification">
+                <textarea v-model="verificationMessage" class="field min-h-24" placeholder="Describe your collectible experience, sourcing proof, or store history"></textarea>
+                <button class="secondary-button" type="submit">Submit Verification Request</button>
+              </form>
+            </div>
+          </div>
+
           <div class="mt-8 grid gap-5 md:grid-cols-2">
             <div>
               <p class="text-sm text-neutral-500">Username</p>
@@ -180,7 +198,7 @@
               <p class="mt-2 text-xl font-black text-amber-200">{{ formatCredits(user?.walletBalance || 0) }}</p>
             </div>
             <div>
-              <p class="text-sm text-neutral-500">Uploaded Artworks</p>
+              <p class="text-sm text-neutral-500">Uploaded Products</p>
               <p class="mt-2 text-xl font-black text-white">{{ artworks.length }}</p>
             </div>
           </div>
@@ -212,9 +230,9 @@
           </div>
 
           <div v-else class="glass-panel rounded-2xl p-10 text-center">
-            <h2 class="text-3xl font-black text-white">No commission requests yet</h2>
+            <h2 class="text-3xl font-black text-white">No seller messages yet</h2>
             <p class="mx-auto mt-3 max-w-xl text-neutral-400">
-              When collectors request custom art from your artwork pages, those messages will appear here.
+              Buyer messages from product pages will appear here.
             </p>
           </div>
         </section>
@@ -232,8 +250,34 @@
           <ArtworkGrid
             :artworks="wishlistArtworks"
             empty-title="Your wishlist is empty"
-            empty-text="Add artworks from the detail page to watch sales, discounts, and bid activity."
+            empty-text="Add products from the detail page to watch sales, discounts, and bid activity."
           />
+        </section>
+
+        <section v-else-if="activeSection === 'giveaways'" class="space-y-5">
+          <div class="glass-panel rounded-2xl p-5">
+            <p class="text-sm text-neutral-500">Available Tickets</p>
+            <p class="mt-2 text-4xl font-black text-amber-200">{{ user?.tickets || 0 }}</p>
+            <p class="mt-2 text-neutral-400">Earn tickets by buying or selling collectible products.</p>
+          </div>
+
+          <article v-for="giveaway in giveaways" :key="giveaway._id" class="glass-panel rounded-2xl p-5">
+            <div class="flex flex-col justify-between gap-4 md:flex-row md:items-start">
+              <div>
+                <p class="text-sm font-bold uppercase tracking-[0.2em] text-amber-200">{{ giveaway.status }}</p>
+                <h2 class="mt-2 text-2xl font-black text-white">{{ giveaway.title }}</h2>
+                <p class="mt-2 text-neutral-400">{{ giveaway.description }}</p>
+                <p class="mt-3 text-sm text-neutral-500">Prize: {{ giveaway.prize }}</p>
+              </div>
+              <button class="premium-button" @click="joinEvent(giveaway._id)">
+                Join for {{ giveaway.ticketCost }} ticket
+              </button>
+            </div>
+          </article>
+
+          <div v-if="!giveaways.length" class="glass-panel rounded-2xl p-10 text-center text-neutral-400">
+            No giveaways are active yet.
+          </div>
         </section>
 
         <section v-else-if="activeSection === 'settings'" class="glass-panel rounded-2xl p-6">
@@ -268,7 +312,7 @@
             </div>
 
             <p class="text-sm text-neutral-400">
-              Fraction uses platform credits for all purchases, bids, commissions, and demo wallet balances.
+              Fraction uses platform credits for all purchases, bids, seller messages, and demo wallet balances.
             </p>
 
             <p v-if="settingsMessage" class="text-sm font-semibold text-emerald-300">{{ settingsMessage }}</p>
@@ -288,7 +332,7 @@
     <div v-if="editingArtwork" class="fixed inset-0 z-50 flex items-center justify-center bg-black/75 px-5">
       <div class="glass-panel w-full max-w-2xl rounded-2xl p-6">
         <div class="mb-6 flex items-center justify-between">
-          <h2 class="text-3xl font-black text-white">Edit Artwork</h2>
+          <h2 class="text-3xl font-black text-white">Edit Product</h2>
           <button class="secondary-button px-4 py-2" @click="editingArtwork = null">Close</button>
         </div>
 
@@ -299,6 +343,10 @@
           <select v-model="editingArtwork.category" class="field">
             <option v-for="category in categories" :key="category">{{ category }}</option>
           </select>
+          <select v-model="editingArtwork.condition" class="field">
+            <option v-for="condition in conditions" :key="condition">{{ condition }}</option>
+          </select>
+          <textarea v-model="editingArtwork.authenticityNotes" placeholder="Authenticity, grading, or provenance notes" class="field min-h-24" />
           <select v-model="editingArtwork.saleType" class="field">
             <option value="sale">Sale</option>
             <option value="bid">Bid</option>
@@ -316,12 +364,12 @@
     <div v-if="showUploadModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/75 px-5">
       <div class="glass-panel max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl p-6">
         <div class="mb-6 flex items-center justify-between">
-          <h2 class="text-3xl font-black text-white">Upload Artwork</h2>
+          <h2 class="text-3xl font-black text-white">Upload Product</h2>
           <button class="secondary-button px-4 py-2" @click="showUploadModal = false">Close</button>
         </div>
 
         <form class="space-y-4" @submit.prevent="handleUploadArtwork">
-          <input v-model="uploadForm.title" placeholder="Artwork Title" class="field" required />
+          <input v-model="uploadForm.title" placeholder="Product title" class="field" required />
           <textarea v-model="uploadForm.description" placeholder="Description" class="field min-h-28" />
           <input v-model.number="uploadForm.price" type="number" min="0" placeholder="Price" class="field" required />
 
@@ -330,12 +378,23 @@
               <option v-for="category in categories" :key="category">{{ category }}</option>
             </select>
 
+            <select v-model="uploadForm.condition" class="field">
+              <option v-for="condition in conditions" :key="condition">{{ condition }}</option>
+            </select>
+
             <select v-model="uploadForm.saleType" class="field">
               <option value="sale">Sale</option>
               <option value="bid">Bid</option>
               <option value="both">Sale + Bid</option>
             </select>
           </div>
+
+          <label class="flex items-center gap-3 rounded-2xl border border-white/10 bg-black/35 px-4 py-3 text-sm font-semibold text-neutral-300">
+            <input v-model="uploadForm.sealed" type="checkbox" class="accent-amber-200" />
+            Sealed item
+          </label>
+
+          <textarea v-model="uploadForm.authenticityNotes" class="field min-h-24" placeholder="Authenticity, grading, provenance, or receipt notes"></textarea>
 
           <input type="file" accept="image/*" class="field file:mr-4 file:rounded-full file:border-0 file:bg-amber-200 file:px-4 file:py-2 file:text-sm file:font-bold file:text-neutral-950" required @change="handleFileChange" />
 
@@ -360,12 +419,20 @@ import { computed, defineComponent, h, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { deleteArtwork, getOwnerArtworks, updateArtwork, uploadArtwork } from '../services/artworkService'
 import { getArtistCommissions, updateCommissionStatus } from '../services/commissionService'
-import { addWalletBalance, getUserProfile, updateUserProfile, updateUserSettings } from '../services/userService'
+import { getGiveaways, joinGiveaway } from '../services/giveawayService'
+import {
+  addWalletBalance,
+  getUserProfile,
+  requestSellerVerification,
+  updateUserProfile,
+  updateUserSettings,
+} from '../services/userService'
 import ArtworkCard from '../components/ArtworkCard.vue'
 import { getArtworkImageUrl } from '../utils/artworkImage'
 import {
   applyTheme,
   categories,
+  conditions,
   formatCredits,
   getStoredSettings,
   languages,
@@ -443,6 +510,7 @@ const uploadMessage = ref('')
 const uploadError = ref(false)
 const isUploading = ref(false)
 const commissions = ref([])
+const giveaways = ref([])
 const settings = ref(getStoredSettings())
 const settingsMessage = ref('')
 const profileMessage = ref('')
@@ -451,6 +519,7 @@ const actionError = ref(false)
 const balanceAmount = ref(1000)
 const balanceMessage = ref('')
 const balanceError = ref(false)
+const verificationMessage = ref('')
 const profileForm = ref({
   displayName: '',
   bio: '',
@@ -464,8 +533,9 @@ const navItems = [
   { key: 'store', label: 'Store' },
   { key: 'collection', label: 'Collection' },
   { key: 'bids', label: 'My Bids' },
-  { key: 'commissions', label: 'Commissions' },
+  { key: 'commissions', label: 'Messages' },
   { key: 'wishlist', label: 'Wishlist' },
+  { key: 'giveaways', label: 'Giveaways' },
   { key: 'profile', label: 'Profile' },
   { key: 'settings', label: 'Settings' },
 ]
@@ -475,6 +545,9 @@ const uploadForm = ref({
   description: '',
   price: '',
   category: categories[0],
+  condition: conditions[0],
+  sealed: false,
+  authenticityNotes: '',
   saleType: 'sale',
 })
 
@@ -496,10 +569,11 @@ const sectionTitle = computed(() => {
   const titles = {
     dashboard: `Welcome back, ${user.value?.username || 'Collector'}`,
     store: 'Your Storefront',
-    collection: 'My Uploaded Artworks',
+    collection: 'My Uploaded Products',
     bids: 'Active Bids',
-    commissions: 'Commissions',
+    commissions: 'Seller Messages',
     wishlist: 'Wishlist',
+    giveaways: 'Giveaways',
     profile: 'Profile',
     settings: 'Settings',
   }
@@ -507,11 +581,18 @@ const sectionTitle = computed(() => {
   return titles[activeSection.value]
 })
 
+const verificationStatusLabel = computed(() => {
+  const status = user.value?.verificationStatus || 'not-requested'
+  if (status === 'pending') return 'Pending Review'
+  if (status === 'rejected') return 'Rejected'
+  return 'Not Verified'
+})
+
 const dashboardStats = computed(() => [
   { label: 'Wallet Balance', value: formatCredits(user.value?.walletBalance || 0), color: 'text-amber-200' },
   { label: 'Net Worth', value: formatCredits(user.value?.netWorth || 0), color: 'text-emerald-200' },
   { label: 'Active Bids', value: activeBidArtworks.value.length, color: 'text-rose-200' },
-  { label: 'Uploaded Artworks', value: artworks.value.length, color: 'text-white' },
+  { label: 'Uploaded Products', value: artworks.value.length, color: 'text-white' },
 ])
 
 const refreshUser = async () => {
@@ -536,6 +617,22 @@ const refreshArtworks = async () => {
 const refreshCommissions = async () => {
   if (!user.value?.username) return
   commissions.value = await getArtistCommissions(user.value.username)
+}
+
+const refreshGiveaways = async () => {
+  giveaways.value = await getGiveaways()
+}
+
+const joinEvent = async (id) => {
+  try {
+    const result = await joinGiveaway(id, user.value.username)
+    user.value = result.user
+    localStorage.setItem('user', JSON.stringify(user.value))
+    await refreshGiveaways()
+    setActionMessage('Giveaway joined.')
+  } catch (error) {
+    setActionMessage(error.response?.data?.error || 'Could not join giveaway.', true)
+  }
 }
 
 const handleDelete = async (id) => {
@@ -565,6 +662,9 @@ const resetUploadForm = () => {
     description: '',
     price: '',
     category: categories[0],
+    condition: conditions[0],
+    sealed: false,
+    authenticityNotes: '',
     saleType: 'sale',
   }
   selectedFile.value = null
@@ -590,6 +690,9 @@ const handleUploadArtwork = async () => {
     formData.append('description', uploadForm.value.description)
     formData.append('price', uploadForm.value.price)
     formData.append('category', uploadForm.value.category)
+    formData.append('condition', uploadForm.value.condition)
+    formData.append('sealed', uploadForm.value.sealed)
+    formData.append('authenticityNotes', uploadForm.value.authenticityNotes)
     formData.append('saleType', uploadForm.value.saleType)
 
     await uploadArtwork(formData)
@@ -601,6 +704,17 @@ const handleUploadArtwork = async () => {
     uploadError.value = true
   } finally {
     isUploading.value = false
+  }
+}
+
+const submitVerification = async () => {
+  try {
+    user.value = await requestSellerVerification(user.value.username, verificationMessage.value)
+    localStorage.setItem('user', JSON.stringify(user.value))
+    verificationMessage.value = ''
+    setActionMessage('Verification request submitted.')
+  } catch (error) {
+    setActionMessage(error.response?.data?.error || 'Could not submit verification request.', true)
   }
 }
 
@@ -640,9 +754,9 @@ const changeCommissionStatus = async (id, status) => {
   try {
     await updateCommissionStatus(id, status)
     await refreshCommissions()
-    setActionMessage('Commission status updated.')
+    setActionMessage('Message status updated.')
   } catch (error) {
-    setActionMessage(error.response?.data?.error || 'Could not update commission status.', true)
+    setActionMessage(error.response?.data?.error || 'Could not update message status.', true)
   }
 }
 
@@ -717,5 +831,6 @@ onMounted(async () => {
   await refreshUser()
   await refreshArtworks()
   await refreshCommissions()
+  await refreshGiveaways()
 })
 </script>

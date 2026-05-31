@@ -9,7 +9,7 @@
         <div>
           <p class="text-sm font-bold uppercase tracking-[0.28em] text-amber-200">Fraction</p>
           <h1 class="mt-4 max-w-xl text-5xl font-black leading-tight text-white">
-            Join the marketplace built for digital art collectors.
+            Join the marketplace built for collectible buyers and sellers.
           </h1>
         </div>
       </div>

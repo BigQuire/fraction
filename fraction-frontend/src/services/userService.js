@@ -46,6 +46,12 @@ export const updateUserProfile = async (username, profile) => {
   return response.data
 }
 
+export const requestSellerVerification = async (username, message) => {
+
+  const response = await axios.post(`${API_URL}/${username}/verification-request`, { message })
+  return response.data
+}
+
 export const addToWishlist = async (username, artworkId) => {
 
   const response = await axios.post(`${API_URL}/${username}/wishlist/${artworkId}`)

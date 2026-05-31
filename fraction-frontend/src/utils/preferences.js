@@ -1,16 +1,25 @@
 export const categories = [
-  'Anime',
-  'Fantasy',
-  'Cyberpunk',
-  'Nature',
-  'Portrait',
-  'Character Design',
-  'Landscape',
-  'Sci-Fi',
-  'Horror',
-  'Abstract',
-  'Game Art',
+  'Trading Cards',
+  'Sealed Boxes',
+  'Figures',
+  'Coins',
+  'Stamps',
   'Comics',
+  'Sports Memorabilia',
+  'Game Collectibles',
+  'Toys',
+  'Vintage Items',
+  'Limited Editions',
+  'Other Collectibles',
+]
+
+export const conditions = [
+  'Mint',
+  'Near Mint',
+  'Excellent',
+  'Good',
+  'Played',
+  'Damaged',
 ]
 
 export const platformCredit = {

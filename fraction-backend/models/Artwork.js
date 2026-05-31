@@ -19,6 +19,14 @@ const artworkSchema = new mongoose.Schema({
 
   category: { type: String, default: 'Anime', },
 
+  productType: { type: String, default: 'Collectible' },
+
+  condition: { type: String, default: 'Good' },
+
+  sealed: { type: Boolean, default: false },
+
+  authenticityNotes: { type: String, default: '' },
+
   bidEndTime: { type: Date, },
 
   currentBid: { type: Number, default: 0, },
@@ -45,6 +53,20 @@ const artworkSchema = new mongoose.Schema({
   resaleAvailableAt: { type: Date, },
 
   lastSalePrice: { type: Number, default: 0 },
+
+  removedByAdmin: { type: Boolean, default: false },
+
+  removalReason: { type: String, default: '' },
+
+  priceHistory: [
+    {
+      price: { type: Number, required: true },
+      event: { type: String, default: 'listing' },
+      buyer: { type: String, default: '' },
+      seller: { type: String, default: '' },
+      createdAt: { type: Date, default: Date.now },
+    },
+  ],
 })
 
 module.exports = mongoose.model('Artwork', artworkSchema)

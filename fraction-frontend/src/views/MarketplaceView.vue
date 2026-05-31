@@ -4,9 +4,9 @@
       <div class="mb-10 flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
         <div>
           <p class="text-sm font-bold uppercase tracking-[0.28em] text-amber-200">Marketplace</p>
-          <h1 class="mt-3 text-5xl font-black text-white">Browse the collection</h1>
+          <h1 class="mt-3 text-5xl font-black text-white">Browse collectibles</h1>
           <p class="mt-4 max-w-2xl text-neutral-400">
-            Filter by sale type, category, and price to find digital pieces that match your collection.
+            Filter by sale type, collectible category, and price to find products that match your collection.
           </p>
         </div>
         <div class="glass-panel rounded-2xl px-5 py-4">
@@ -27,7 +27,7 @@
           <div class="space-y-5">
             <label class="block">
               <span class="mb-2 block text-sm font-semibold text-neutral-300">Search</span>
-              <input v-model="searchQuery" type="text" placeholder="Artwork title" class="field" />
+              <input v-model="searchQuery" type="text" placeholder="Product title" class="field" />
             </label>
 
             <label class="block">
@@ -94,7 +94,7 @@
           </div>
 
           <div v-else class="glass-panel rounded-2xl p-12 text-center">
-            <h3 class="text-2xl font-black text-white">No artworks found</h3>
+            <h3 class="text-2xl font-black text-white">No collectibles found</h3>
             <p class="mt-3 text-neutral-400">Try widening the price range or clearing the current filters.</p>
           </div>
         </section>

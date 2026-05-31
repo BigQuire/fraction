@@ -23,7 +23,7 @@
 
         <div class="lg:sticky lg:top-28 lg:h-fit">
           <p class="mb-4 text-sm font-bold uppercase tracking-[0.28em] text-amber-200">
-            {{ artwork.category || 'Digital Artwork' }}
+            {{ artwork.category || 'Collectible Product' }}
           </p>
 
           <h1 class="text-5xl font-black leading-tight text-white">
@@ -31,12 +31,19 @@
           </h1>
 
           <p class="mt-4 text-xl text-neutral-400">
-            By {{ artwork.artist }}
+            Seller: {{ artwork.owner || artwork.artist }}
+            <span v-if="artwork.sellerVerified" class="ml-2 text-sm font-bold text-amber-200">Verified</span>
           </p>
 
           <p class="mt-8 leading-8 text-neutral-300">
             {{ artwork.description || 'No description has been added for this artwork yet.' }}
           </p>
+
+          <div class="mt-6 grid grid-cols-2 gap-3 text-sm text-neutral-400">
+            <p>Condition: <span class="font-semibold text-white">{{ artwork.condition || 'Good' }}</span></p>
+            <p>Sealed: <span class="font-semibold text-white">{{ artwork.sealed ? 'Yes' : 'No' }}</span></p>
+            <p class="col-span-2">Authenticity: <span class="font-semibold text-white">{{ artwork.authenticityNotes || 'Seller provided listing details.' }}</span></p>
+          </div>
 
           <div class="mt-9 grid grid-cols-2 gap-4">
             <div class="glass-panel rounded-2xl p-5">
@@ -62,9 +69,27 @@
               {{ isWishlisted ? 'Remove Wishlist' : 'Add Wishlist' }}
             </button>
             <button class="secondary-button" @click="showCommissionModal = true">
-              Request Commission
+              Message Seller
             </button>
             <router-link to="/marketplace" class="secondary-button">Back to Marketplace</router-link>
+          </div>
+
+          <div class="glass-panel mt-8 rounded-2xl p-6">
+            <div class="mb-4 flex items-center justify-between">
+              <h2 class="text-2xl font-black text-white">Price History</h2>
+              <span class="text-sm text-neutral-500">{{ priceHistory.length }} points</span>
+            </div>
+            <svg v-if="priceChartPoints" viewBox="0 0 320 120" class="h-40 w-full overflow-visible">
+              <polyline
+                :points="priceChartPoints"
+                fill="none"
+                stroke="#fcd34d"
+                stroke-width="4"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+            <p v-else class="text-neutral-400">Price history appears after listing or sale events.</p>
           </div>
 
           <p
@@ -139,20 +164,20 @@
     </section>
 
     <section v-else class="page-shell py-20 text-center">
-      <h1 class="text-4xl font-black text-white">Artwork not found</h1>
+      <h1 class="text-4xl font-black text-white">Product not found</h1>
       <router-link to="/marketplace" class="premium-button mt-6">Return to Marketplace</router-link>
     </section>
 
     <div v-if="showCommissionModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/75 px-5">
       <div class="glass-panel w-full max-w-2xl rounded-2xl p-6">
         <div class="mb-6 flex items-center justify-between gap-4">
-          <h2 class="text-3xl font-black text-white">Request Custom Art</h2>
+          <h2 class="text-3xl font-black text-white">Message Seller</h2>
           <button class="secondary-button px-4 py-2" @click="showCommissionModal = false">Close</button>
         </div>
 
         <form class="space-y-4" @submit.prevent="handleCommission">
-          <input v-model="commissionForm.title" class="field" placeholder="Commission title" required />
-          <textarea v-model="commissionForm.message" class="field min-h-32" placeholder="Describe the art you want" required />
+          <input v-model="commissionForm.title" class="field" placeholder="Message subject" required />
+          <textarea v-model="commissionForm.message" class="field min-h-32" placeholder="Ask about condition, shipping, provenance, or bundles" required />
           <div class="grid gap-4 sm:grid-cols-2">
             <input v-model.number="commissionForm.budget" class="field" type="number" min="0" placeholder="Budget" />
             <input v-model="commissionForm.deadline" class="field" type="date" />
@@ -160,7 +185,7 @@
           <p v-if="commissionMessage" class="text-sm font-semibold" :class="commissionError ? 'text-rose-300' : 'text-emerald-300'">
             {{ commissionMessage }}
           </p>
-          <button class="premium-button" type="submit">Send Request</button>
+          <button class="premium-button" type="submit">Send Message</button>
         </form>
       </div>
     </div>
@@ -206,6 +231,24 @@ const statusLabel = computed(() => {
 })
 
 const minimumNextBid = computed(() => Number(artwork.value?.currentBid || 1) + 1)
+
+const priceHistory = computed(() => artwork.value?.priceHistory || [])
+
+const priceChartPoints = computed(() => {
+  if (priceHistory.value.length < 2) return ''
+  const prices = priceHistory.value.map((point) => Number(point.price || 0))
+  const min = Math.min(...prices)
+  const max = Math.max(...prices)
+  const range = max - min || 1
+
+  return prices
+    .map((price, index) => {
+      const x = (index / (prices.length - 1)) * 320
+      const y = 110 - ((price - min) / range) * 100
+      return `${x},${y}`
+    })
+    .join(' ')
+})
 
 const handleBid = async () => {
   const storedUser = JSON.parse(localStorage.getItem('user'))
@@ -316,11 +359,11 @@ const handleCommission = async () => {
       budget: commissionForm.value.budget,
       deadline: commissionForm.value.deadline,
     })
-    commissionMessage.value = 'Commission request sent to the artist.'
+    commissionMessage.value = 'Message sent to the seller.'
     commissionError.value = false
     commissionForm.value = { title: '', message: '', budget: '', deadline: '' }
   } catch (error) {
-    commissionMessage.value = error.response?.data?.error || 'Commission request failed.'
+    commissionMessage.value = error.response?.data?.error || 'Seller message failed.'
     commissionError.value = true
   }
 }

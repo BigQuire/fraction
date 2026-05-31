@@ -125,6 +125,35 @@ router.put('/:username/profile', async (req, res) => {
   }
 })
 
+router.post('/:username/verification-request', async (req, res) => {
+  try {
+    const user = await User.findOneAndUpdate(
+      { username: req.params.username },
+      {
+        verificationStatus: 'pending',
+        verificationRequest: {
+          message: req.body.message || '',
+          submittedAt: new Date(),
+          adminNote: '',
+        },
+      },
+      { new: true }
+    ).populate('wishlist')
+
+    if (!user) {
+      return res.status(404).json({
+        message: 'User not found',
+      })
+    }
+
+    res.status(200).json(user)
+  } catch (error) {
+    res.status(500).json({
+      error: error.message,
+    })
+  }
+})
+
 router.post('/:username/wishlist/:artworkId', async (req, res) => {
   try {
     const user = await User.findOne({ username: req.params.username }).populate('wishlist')

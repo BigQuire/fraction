@@ -13,6 +13,23 @@ const userSchema = new mongoose.Schema({
 
   role: { type: String, default: 'user', },
 
+  isVerifiedSeller: { type: Boolean, default: false },
+
+  verificationStatus: { type: String, default: 'not-requested' },
+
+  verificationRequest: {
+    message: { type: String, default: '' },
+    submittedAt: { type: Date },
+    reviewedAt: { type: Date },
+    adminNote: { type: String, default: '' },
+  },
+
+  sellerRating: { type: Number, default: 0 },
+
+  reviewCount: { type: Number, default: 0 },
+
+  tickets: { type: Number, default: 0 },
+
   profile: {
     displayName: { type: String, default: '' },
     bio: { type: String, default: '' },

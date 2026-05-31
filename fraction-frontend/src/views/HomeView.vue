@@ -9,13 +9,13 @@
       <div class="page-shell relative flex min-h-[calc(100vh-5rem)] items-center pb-24 pt-20">
         <div class="max-w-3xl">
           <p class="mb-5 text-sm font-bold uppercase tracking-[0.32em] text-amber-200">
-            Curated digital originals
+            Verified collectible marketplace
           </p>
           <h1 class="max-w-4xl text-5xl font-black leading-tight text-white sm:text-6xl lg:text-7xl">
-            Collect hand-drawn artwork with gallery-grade presentation.
+            Buy, bid, and trade collectible items with seller accountability.
           </h1>
           <p class="mt-6 max-w-2xl text-lg leading-8 text-neutral-300">
-            Discover rare digital pieces, follow live bids, and manage your own collection from one refined marketplace.
+            Discover trading cards, sealed items, figures, comics, memorabilia, and other collectible products from rated sellers.
           </p>
           <div class="mt-9 flex flex-col gap-3 sm:flex-row">
             <router-link to="/marketplace" class="premium-button">Explore Marketplace</router-link>
@@ -38,7 +38,7 @@
       <div class="mb-10 flex flex-col justify-between gap-4 md:flex-row md:items-end">
         <div>
           <p class="text-sm font-bold uppercase tracking-[0.28em] text-amber-200">Now available</p>
-          <h2 class="mt-3 text-4xl font-black text-white">Featured Artworks</h2>
+          <h2 class="mt-3 text-4xl font-black text-white">Featured Collectibles</h2>
         </div>
         <router-link to="/marketplace" class="secondary-button w-fit">View All</router-link>
       </div>
@@ -57,7 +57,7 @@
       </div>
 
       <div v-else class="glass-panel rounded-2xl p-10 text-center text-neutral-400">
-        Featured artworks will appear here once artists upload pieces for sale.
+        Featured collectibles will appear here once sellers upload products for sale.
       </div>
     </section>
 
@@ -83,7 +83,7 @@
       </div>
 
       <div v-else class="glass-panel rounded-2xl p-10 text-center text-neutral-400">
-        No live bids yet. Check back after artists start auctions.
+        No live bids yet. Check back after sellers start auctions.
       </div>
     </section>
   </main>
@@ -99,10 +99,10 @@ import { getArtworkImageUrl } from '../utils/artworkImage'
 const artworks = ref([])
 
 const stats = computed(() => [
-  { value: artworks.value.length, label: 'Artworks' },
+  { value: artworks.value.length, label: 'Products' },
   { value: saleArtworks.value.length, label: 'For Sale' },
   { value: bidArtworks.value.length, label: 'Live Bids' },
-  { value: new Set(artworks.value.map((artwork) => artwork.artist)).size, label: 'Artists' },
+  { value: new Set(artworks.value.map((artwork) => artwork.owner || artwork.artist)).size, label: 'Sellers' },
 ])
 
 onMounted(async () => {

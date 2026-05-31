@@ -22,6 +22,10 @@
       </router-link>
     </div>
 
+    <button class="secondary-button px-4 py-2 md:hidden" @click="isMenuOpen = !isMenuOpen">
+      Menu
+    </button>
+
     <div v-if="!user" class="flex items-center gap-3">
       <router-link to="/register" class="hidden text-sm font-semibold text-neutral-300 transition hover:text-white sm:block">
         Register
@@ -40,18 +44,43 @@
       </router-link>
     </div>
   </nav>
+
+  <div v-if="isMenuOpen" class="border-t border-white/10 bg-black/95 px-5 py-4 md:hidden">
+    <div class="grid gap-2">
+      <router-link
+        v-for="item in navItems"
+        :key="item.to"
+        :to="item.to"
+        class="rounded-2xl px-4 py-3 text-sm font-bold text-neutral-200 hover:bg-white/10"
+        @click="isMenuOpen = false"
+      >
+        {{ item.label }}
+      </router-link>
+      <router-link
+        v-if="user"
+        to="/dashboard"
+        class="rounded-2xl px-4 py-3 text-sm font-bold text-neutral-200 hover:bg-white/10"
+        @click="isMenuOpen = false"
+      >
+        Dashboard
+      </router-link>
+    </div>
+  </div>
   </header>
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useRoute } from 'vue-router'
 
 const $route = useRoute()
+const isMenuOpen = ref(false)
 
 const navItems = [
   { to: '/', label: 'Home' },
   { to: '/marketplace', label: 'Marketplace' },
+  { to: '/reviews', label: 'Reviews' },
+  { to: '/admin', label: 'Admin' },
 ]
 
 const user = computed(() => {
