@@ -5,11 +5,42 @@ const User = require('../models/User')
 
 const GACHA_COST = 100
 const GACHA_DRAW_COUNTS = [1, 10, 50, 100]
-const gachaPrizePool = [
-  { name: 'Sealed Card Pack', rarity: 'Common', chance: 45, color: 'text-neutral-300', description: 'A starter collectible pack for your collection.', imageUrl: '' }, // Replace imageUrl with your common prize image later.
-  { name: 'Limited Figure Voucher', rarity: 'Rare', chance: 30, color: 'text-sky-200', description: 'A rare voucher placeholder for future fulfilment.', imageUrl: '' }, // Replace imageUrl with your rare prize image later.
-  { name: 'Premium Storage Case', rarity: 'Epic', chance: 18, color: 'text-violet-200', description: 'An epic accessory prize for collectors.', imageUrl: '' }, // Replace imageUrl with your epic prize image later.
-  { name: 'Golden Collector Ticket', rarity: 'Legendary', chance: 7, color: 'text-amber-200', description: 'A top-tier prize placeholder for the detailed gacha system later.', imageUrl: '' }, // Replace imageUrl with your legendary prize image later.
+const gachaPrizeCategories = [
+  {
+    rarity: 'Common',
+    chance: 75,
+    color: 'text-neutral-300',
+    prizes: [
+      { name: 'Giveaway Ticket', description: 'You get one entry per ticket for giveaway.', imageUrl: '' }, // Replace imageUrl with your common prize image later.
+    ],
+  },
+  {
+    rarity: 'Rare',
+    chance: 15,
+    color: 'text-sky-200',
+    prizes: [
+      { name: 'No Reaction Pack', description: 'No Reaction Pack for collectibles.', imageUrl: '' }, // Replace imageUrl with your rare prize image later.
+    ],
+  },
+  {
+    rarity: 'Epic',
+    chance: 9,
+    color: 'text-violet-200',
+    prizes: [
+      { name: 'Raw SIR Card A', description: 'SIR from No Reaction Pack.', imageUrl: '' }, // Replace imageUrl with your first epic prize image later.
+      { name: 'Raw SIR Card B', description: 'Alternate SIR from No Reaction Pack.', imageUrl: '' }, // Replace imageUrl with your second epic prize image later.
+      { name: 'Raw SIR Card C', description: 'Chase SIR from No Reaction Pack.', imageUrl: '' }, // Replace imageUrl with your third epic prize image later.
+    ],
+  },
+  {
+    rarity: 'Legendary',
+    chance: 1,
+    color: 'text-amber-200',
+    prizes: [
+      { name: 'PSA 10 Graded Card A', description: 'PSA 10 Graded Card from No Reaction Pack.', imageUrl: '' }, // Replace imageUrl with your first legendary prize image later.
+      { name: 'PSA 10 Graded Card B', description: 'Another PSA 10 graded chase card.', imageUrl: '' }, // Replace imageUrl with your second legendary prize image later.
+    ],
+  },
 ]
 const resaleValues = {
   Common: 20,
@@ -28,10 +59,18 @@ const pickGachaPrize = () => {
   const roll = Math.random() * 100
   let total = 0
 
-  return gachaPrizePool.find((prize) => {
-    total += prize.chance
+  const category = gachaPrizeCategories.find((prizeCategory) => {
+    total += prizeCategory.chance
     return roll <= total
-  }) || gachaPrizePool[0]
+  }) || gachaPrizeCategories[0]
+  const selectedPrize = category.prizes[Math.floor(Math.random() * category.prizes.length)]
+
+  return {
+    ...selectedPrize,
+    rarity: category.rarity,
+    chance: category.chance,
+    color: category.color,
+  }
 }
 
 const requiredShippingFields = [

@@ -128,6 +128,16 @@
               <p class="mt-2 text-sm text-neutral-500">
                 Highest Bidder: {{ artwork.highestBidder || 'None yet' }}
               </p>
+              <div class="mt-4 grid gap-3 sm:grid-cols-2">
+                <div v-if="artwork.buyoutPrice" class="rounded-2xl border border-white/10 bg-white/5 p-4">
+                  <p class="text-sm text-neutral-500">Buyout Price</p>
+                  <p class="mt-1 text-xl font-black text-amber-200">{{ formatCredits(artwork.buyoutPrice) }}</p>
+                </div>
+                <div v-if="artwork.desiredPrice" class="rounded-2xl border border-white/10 bg-white/5 p-4">
+                  <p class="text-sm text-neutral-500">Seller Desired Price</p>
+                  <p class="mt-1 text-xl font-black text-white">{{ formatCredits(artwork.desiredPrice) }}</p>
+                </div>
+              </div>
             </div>
 
             <form class="flex flex-col gap-3 sm:flex-row" @submit.prevent="handleBid">

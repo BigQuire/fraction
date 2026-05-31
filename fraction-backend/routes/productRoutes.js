@@ -428,7 +428,7 @@ router.put('/:id', async (req, res) => {
 
 router.put('/:id/list', async (req, res) => {
   try {
-    const { username, price, saleType, bidEndTime } = req.body
+    const { username, price, saleType, bidEndTime, buyoutPrice, desiredPrice } = req.body
     const artwork = await Product.findById(req.params.id)
 
     if (!artwork) {
@@ -478,6 +478,8 @@ router.put('/:id/list', async (req, res) => {
         autoBids: [],
         bidEndTime: new Date(bidEndTime),
         bidSettled: false,
+        buyoutPrice: Number(buyoutPrice || 0),
+        desiredPrice: Number(desiredPrice || 0),
         createdAt: new Date(),
         priceHistory: [
           {

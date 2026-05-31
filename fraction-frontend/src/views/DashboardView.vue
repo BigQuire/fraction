@@ -627,6 +627,8 @@
             One stock from {{ auctionArtwork.title }} will move into a separate bid listing. Remaining stock stays on sale.
           </p>
           <input v-model="auctionEndTime" class="field" type="datetime-local" required />
+          <input v-model.number="auctionBuyoutPrice" class="field" type="number" min="0" placeholder="Buyout price in FRC" />
+          <input v-model.number="auctionDesiredPrice" class="field" type="number" min="0" placeholder="Desired price in FRC" />
           <button class="premium-button" type="submit">Create Bid Listing</button>
         </form>
       </div>
@@ -767,6 +769,8 @@ const editingArtwork = ref(null)
 const showUploadModal = ref(false)
 const auctionArtwork = ref(null)
 const auctionEndTime = ref('')
+const auctionBuyoutPrice = ref('')
+const auctionDesiredPrice = ref('')
 const selectedFile = ref(null)
 const uploadMessage = ref('')
 const uploadError = ref(false)
@@ -1153,6 +1157,8 @@ const openAuctionModal = (artwork) => {
   auctionArtwork.value = artwork
   const defaultEnd = new Date(Date.now() + 24 * 60 * 60 * 1000)
   auctionEndTime.value = defaultEnd.toISOString().slice(0, 16)
+  auctionBuyoutPrice.value = artwork.price || ''
+  auctionDesiredPrice.value = artwork.price || ''
 }
 
 const startAuction = async () => {
@@ -1161,6 +1167,8 @@ const startAuction = async () => {
       username: user.value.username,
       saleType: 'bid',
       bidEndTime: auctionEndTime.value,
+      buyoutPrice: auctionBuyoutPrice.value,
+      desiredPrice: auctionDesiredPrice.value,
     }
 
     await listProductForSale(auctionArtwork.value._id, updatedArtwork)

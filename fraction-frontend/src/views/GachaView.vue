@@ -6,7 +6,7 @@
           <p class="text-sm font-bold uppercase tracking-[0.28em] text-amber-200">Gacha</p>
           <h1 class="mt-3 text-5xl font-black text-white">Collectible Blind Box</h1>
           <p class="mt-4 max-w-2xl text-neutral-400">
-            Spend Fraction Credits for a simulated online blind box and draw a prize from the current prize pool.
+            Spend Fraction Credits online blind box and draw a prize from the current prize pool.
           </p>
         </div>
 
@@ -92,9 +92,15 @@
         </section>
 
         <aside class="glass-panel h-fit rounded-2xl p-6">
-          <h2 class="text-2xl font-black text-white">Prize Pool</h2>
+          <h2 class="text-2xl font-black text-white">Prize Pool Gallery</h2>
           <div class="mt-5 grid gap-3">
-            <article v-for="prize in prizePool" :key="prize.name" class="rounded-2xl border border-white/10 bg-white/5 p-4">
+            <article v-for="prize in prizeGallery" :key="prize.name" class="rounded-2xl border border-white/10 bg-white/5 p-4">
+              <img
+                v-if="prize.imageUrl"
+                :src="prize.imageUrl"
+                :alt="prize.name"
+                class="mb-3 h-24 w-full rounded-xl object-cover"
+              />
               <div class="flex items-center justify-between gap-3">
                 <p class="font-black text-white">{{ prize.name }}</p>
                 <p class="text-xs font-bold" :class="prize.color">{{ prize.chance }}%</p>
@@ -125,40 +131,82 @@ const boxCost = 100
 const selectedDrawCount = ref(1)
 const drawOptions = [1, 10, 50, 100]
 
-const prizePool = [
+const prizeCategories = [
   {
-    name: 'Sealed Card Pack',
     rarity: 'Common',
-    chance: 45,
+    chance: 75,
     color: 'text-neutral-300',
-    description: 'A starter collectible pack for your collection.',
-    // imageUrl: '/replace-with-your-common-prize-image.png',
+    prizes: [
+      {
+        name: 'Giveaway Ticket',
+        description: 'You get one entry per ticket for giveaway.',
+        // imageUrl: '/replace-with-your-common-prize-image.png',
+      },
+    ],
   },
   {
-    name: 'Limited Figure Voucher',
     rarity: 'Rare',
-    chance: 30,
+    chance: 15,
     color: 'text-sky-200',
-    description: 'A rare voucher placeholder for future fulfilment.',
-    // imageUrl: '/replace-with-your-rare-prize-image.png',
+    prizes: [
+      {
+        name: 'No Reaction Pack',
+        description: 'No Reaction Pack for collectibles.',
+        // imageUrl: '/replace-with-your-rare-prize-image.png',
+      },
+    ],
   },
   {
-    name: 'Premium Storage Case',
     rarity: 'Epic',
-    chance: 18,
+    chance: 9,
     color: 'text-violet-200',
-    description: 'An epic accessory prize for collectors.',
-    // imageUrl: '/replace-with-your-epic-prize-image.png',
+    prizes: [
+      {
+        name: 'Raw SIR Card A',
+        description: 'SIR from No Reaction Pack.',
+        // imageUrl: '/replace-with-your-first-epic-prize-image.png',
+      },
+      {
+        name: 'Raw SIR Card B',
+        description: 'Alternate SIR from No Reaction Pack.',
+        // imageUrl: '/replace-with-your-second-epic-prize-image.png',
+      },
+      {
+        name: 'Raw SIR Card C',
+        description: 'Chase SIR from No Reaction Pack.',
+        // imageUrl: '/replace-with-your-third-epic-prize-image.png',
+      },
+    ],
   },
   {
-    name: 'Golden Collector Ticket',
     rarity: 'Legendary',
-    chance: 7,
+    chance: 1,
     color: 'text-amber-200',
-    description: 'A top-tier prize placeholder for the detailed gacha system later.',
-    // imageUrl: '/replace-with-your-legendary-prize-image.png',
+    prizes: [
+      {
+        name: 'PSA 10 Graded Card A',
+        description: 'PSA 10 Graded Card from No Reaction Pack.',
+        // imageUrl: '/replace-with-your-first-legendary-prize-image.png',
+      },
+      {
+        name: 'PSA 10 Graded Card B',
+        description: 'Another PSA 10 graded chase card.',
+        // imageUrl: '/replace-with-your-second-legendary-prize-image.png',
+      },
+    ],
   },
 ]
+
+const prizeGallery = computed(() => {
+  return prizeCategories.flatMap((category) =>
+    category.prizes.map((prize) => ({
+      ...prize,
+      rarity: category.rarity,
+      chance: category.chance,
+      color: category.color,
+    }))
+  )
+})
 
 const totalCost = computed(() => selectedDrawCount.value * boxCost)
 const featuredPrize = computed(() => {

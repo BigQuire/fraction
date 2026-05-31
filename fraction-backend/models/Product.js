@@ -39,6 +39,10 @@ const productSchema = new mongoose.Schema({
 
   bidSettled: { type: Boolean, default: false },
 
+  buyoutPrice: { type: Number, default: 0 },
+
+  desiredPrice: { type: Number, default: 0 },
+
   currentBid: { type: Number, default: 0, },
 
   highestBidder: { type: String, default: '', },
