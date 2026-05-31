@@ -1,17 +1,18 @@
 export const categories = [
-  'Trading Cards',
-  'Sealed Boxes',
-  'Figures',
-  'Coins',
-  'Stamps',
-  'Comics',
-  'Sports Memorabilia',
-  'Game Collectibles',
-  'Toys',
-  'Vintage Items',
-  'Limited Editions',
-  'Other Collectibles',
+  'Sets',
+  'Eras',
+  'Raw Cards',
+  'Graded Cards',
+  'Sealed Products',
 ]
+
+export const subCategories = {
+  Sets: ['Base Set', 'Expansion Set', 'Special Set', 'Master Set'],
+  Eras: ['Vintage', 'Modern', 'Scarlet & Violet', 'Sword & Shield'],
+  'Raw Cards': ['Promo', 'Holo', 'Reverse Holo', 'First Edition'],
+  'Graded Cards': ['PSA', 'BGS', 'CGC', 'Ace Grading'],
+  'Sealed Products': ['Booster Box', 'Elite Trainer Box', 'Blister Pack', 'Tin', 'Promo Box'],
+}
 
 export const conditions = [
   'Mint',

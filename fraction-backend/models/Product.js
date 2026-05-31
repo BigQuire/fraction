@@ -19,6 +19,12 @@ const productSchema = new mongoose.Schema({
 
   category: { type: String, default: 'Anime', },
 
+  subCategory: { type: String, default: '' },
+
+  setName: { type: String, default: '' },
+
+  era: { type: String, default: '' },
+
   productType: { type: String, default: 'Collectible' },
 
   stockCount: { type: Number, default: 1, min: 0 },
@@ -30,6 +36,8 @@ const productSchema = new mongoose.Schema({
   authenticityNotes: { type: String, default: '' },
 
   bidEndTime: { type: Date, },
+
+  bidSettled: { type: Boolean, default: false },
 
   currentBid: { type: Number, default: 0, },
 
@@ -86,6 +94,8 @@ const productSchema = new mongoose.Schema({
         country: { type: String, default: '' },
       },
       status: { type: String, default: 'pending-shipment' },
+      trackingCode: { type: String, default: '' },
+      shippedAt: { type: Date },
       createdAt: { type: Date, default: Date.now },
     },
   ],

@@ -69,6 +69,12 @@ export const listProductForSale = async (id, listingData) => {
   return response.data
 }
 
+export const markOrderShipped = async (id, purchaseId, username, trackingCode) => {
+
+  const response = await axios.put(`${API_URL}/${id}/orders/${purchaseId}/shipped`, { username, trackingCode })
+  return response.data
+}
+
 export const getArtworks = getProducts
 export const getArtworkById = getProductById
 export const getArtistArtworks = getSellerProducts

@@ -101,6 +101,43 @@ router.post('/giveaways', requireAdmin, async (req, res) => {
   }
 })
 
+router.get('/giveaways', requireAdmin, async (req, res) => {
+  try {
+    const giveaways = await Giveaway.find().sort({ createdAt: -1 })
+    res.status(200).json(giveaways)
+  } catch (error) {
+    res.status(500).json({ error: error.message })
+  }
+})
+
+router.put('/giveaways/:id/select-winner', requireAdmin, async (req, res) => {
+  try {
+    const giveaway = await Giveaway.findById(req.params.id)
+
+    if (!giveaway) {
+      return res.status(404).json({ error: 'Giveaway not found' })
+    }
+
+    if (giveaway.endAt && new Date(giveaway.endAt) > new Date()) {
+      return res.status(400).json({ error: 'Giveaway has not ended yet' })
+    }
+
+    if (!giveaway.entries.length) {
+      return res.status(400).json({ error: 'No entries yet' })
+    }
+
+    const winnerEntry = giveaway.entries[Math.floor(Math.random() * giveaway.entries.length)]
+    giveaway.winner = winnerEntry.username
+    giveaway.winnerSelectedAt = new Date()
+    giveaway.status = 'ended'
+    await giveaway.save()
+
+    res.status(200).json(giveaway)
+  } catch (error) {
+    res.status(500).json({ error: error.message })
+  }
+})
+
 router.get('/shipping-requests', requireAdmin, async (req, res) => {
   try {
     const users = await User.find({ 'shipments.status': 'pending-fulfilment' })

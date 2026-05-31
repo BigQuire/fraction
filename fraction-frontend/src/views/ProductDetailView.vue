@@ -404,7 +404,7 @@ const handleCommission = async () => {
 
   try {
     await createCommission({
-      artist: artwork.value.artist,
+      artist: artwork.value.owner || artwork.value.artist,
       fromUser: storedUser.username,
       artworkId: artwork.value._id,
       title: commissionForm.value.title,

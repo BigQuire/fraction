@@ -36,6 +36,16 @@ export const createAdminGiveaway = async (giveawayData) => {
   return response.data
 }
 
+export const getAdminGiveaways = async () => {
+  const response = await axios.get(`${API_URL}/giveaways`, { headers: adminHeaders() })
+  return response.data
+}
+
+export const selectAdminGiveawayWinner = async (id) => {
+  const response = await axios.put(`${API_URL}/giveaways/${id}/select-winner`, {}, { headers: adminHeaders() })
+  return response.data
+}
+
 export const getAdminShippingRequests = async () => {
   const response = await axios.get(`${API_URL}/shipping-requests`, { headers: adminHeaders() })
   return response.data

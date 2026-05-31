@@ -16,6 +16,67 @@ const RESALE_COOLDOWN_DAYS = 7
 
 const getSellerUsername = (artwork) => artwork.owner || artwork.artist
 
+const populateUserCollections = (query) => query
+  .populate('wishlist')
+  .populate('purchases.product')
+  .populate('inventory.product')
+  .populate('shipments.product')
+
+const settleExpiredBid = async (product) => {
+  if (
+    !product
+    || product.saleType !== 'bid'
+    || product.bidSettled
+    || !product.bidEndTime
+    || new Date(product.bidEndTime) > new Date()
+  ) {
+    return product
+  }
+
+  product.bidSettled = true
+  product.stockCount = 0
+  product.saleType = 'sold-out'
+
+  if (product.highestBidder && Number(product.currentBid || 0) > 0) {
+    const sellerUsername = getSellerUsername(product)
+    const winner = await User.findOne({ username: product.highestBidder })
+    const seller = await User.findOne({ username: sellerUsername })
+    const price = Number(product.currentBid || 0)
+
+    if (seller) {
+      seller.walletBalance += price
+      seller.tickets += 1
+      await seller.save()
+    }
+
+    if (winner) {
+      winner.tickets += 1
+      winner.inventory.push({
+        name: product.title,
+        rarity: 'Bid Win',
+        source: 'bid',
+        product: product._id,
+        price,
+        imageUrl: product.imageUrl,
+        description: product.description,
+        status: 'stored',
+      })
+      await winner.save()
+    }
+
+    product.lastSalePrice = price
+    product.priceHistory.push({
+      price,
+      event: 'bid-win',
+      buyer: product.highestBidder,
+      seller: sellerUsername,
+    })
+  }
+
+  await product.save()
+  return product
+}
+
 const refreshUserNetWorth = async (username) => {
   if (!username) return null
 
@@ -139,6 +200,13 @@ const upload = multer({ storage })
 
 router.get('/', async (req, res) => {
   try {
+    const expiredBids = await Product.find({
+      saleType: 'bid',
+      bidSettled: { $ne: true },
+      bidEndTime: { $lte: new Date() },
+    })
+    await Promise.all(expiredBids.map(settleExpiredBid))
+
     const artworks = await Product.find({
       removedByAdmin: { $ne: true },
       $or: [
@@ -197,6 +265,9 @@ router.post(
         saleType,
         category,
         productType,
+        subCategory,
+        setName,
+        era,
         condition,
         sealed,
         authenticityNotes,
@@ -209,6 +280,9 @@ router.post(
         price,
         saleType,
         category,
+        subCategory,
+        setName,
+        era,
         productType,
         stockCount: Math.max(Number(req.body.stockCount || 1), 0),
         condition,
@@ -244,6 +318,14 @@ router.post(
 
 router.get('/artist/:artist', async (req, res) => {
   try {
+    const expiredBids = await Product.find({
+      artist: req.params.artist,
+      saleType: 'bid',
+      bidSettled: { $ne: true },
+      bidEndTime: { $lte: new Date() },
+    })
+    await Promise.all(expiredBids.map(settleExpiredBid))
+
     const artworks = await Product.find({
       artist: req.params.artist,
       removedByAdmin: { $ne: true },
@@ -260,6 +342,14 @@ router.get('/artist/:artist', async (req, res) => {
 
 router.get('/owner/:owner', async (req, res) => {
   try {
+    const expiredBids = await Product.find({
+      owner: req.params.owner,
+      saleType: 'bid',
+      bidSettled: { $ne: true },
+      bidEndTime: { $lte: new Date() },
+    })
+    await Promise.all(expiredBids.map(settleExpiredBid))
+
     const artworks = await Product.find({
       owner: req.params.owner,
       removedByAdmin: { $ne: true },
@@ -276,7 +366,9 @@ router.get('/owner/:owner', async (req, res) => {
 
 router.get('/:id', async (req, res) => {
   try {
-    const artwork = await Product.findById(req.params.id).lean()
+    const product = await Product.findById(req.params.id)
+    await settleExpiredBid(product)
+    const artwork = product?.toObject()
     const seller = await User.findOne({ username: artwork?.owner || artwork?.artist }).lean()
     res.status(200).json({
       ...artwork,
@@ -336,7 +428,7 @@ router.put('/:id', async (req, res) => {
 
 router.put('/:id/list', async (req, res) => {
   try {
-    const { username, price, saleType } = req.body
+    const { username, price, saleType, bidEndTime } = req.body
     const artwork = await Product.findById(req.params.id)
 
     if (!artwork) {
@@ -357,14 +449,50 @@ router.put('/:id/list', async (req, res) => {
       })
     }
 
-    artwork.saleType = saleType || 'sale'
+    if ((saleType || 'sale') === 'bid') {
+      if (Number(artwork.stockCount || 0) < 1) {
+        return res.status(400).json({
+          error: 'No stock available to move into bidding',
+        })
+      }
 
-    if (artwork.saleType === 'bid') {
-      artwork.currentBid = STARTING_BID
-      artwork.highestBidder = ''
-      artwork.autoBids = []
-      artwork.bidEndTime = new Date(Date.now() + 24 * 60 * 60 * 1000)
+      if (!bidEndTime || new Date(bidEndTime) <= new Date()) {
+        return res.status(400).json({
+          error: 'Choose a future bid end time',
+        })
+      }
+
+      artwork.stockCount = Math.max(Number(artwork.stockCount || 0) - 1, 0)
+      if (artwork.stockCount === 0) {
+        artwork.saleType = 'sold-out'
+      }
+      await artwork.save()
+
+      const bidProduct = new Product({
+        ...artwork.toObject(),
+        _id: undefined,
+        stockCount: 1,
+        saleType: 'bid',
+        currentBid: STARTING_BID,
+        highestBidder: '',
+        autoBids: [],
+        bidEndTime: new Date(bidEndTime),
+        bidSettled: false,
+        createdAt: new Date(),
+        priceHistory: [
+          {
+            price: STARTING_BID,
+            event: 'bid-listing',
+            seller: username,
+          },
+        ],
+        purchaseHistory: [],
+      })
+      await bidProduct.save()
+      await refreshUserNetWorth(username)
+      return res.status(200).json(bidProduct)
     } else {
+      artwork.saleType = saleType || 'sale'
       artwork.price = Number(price || artwork.price)
       artwork.priceHistory.push({
         price: artwork.price,
@@ -521,6 +649,58 @@ router.put('/:id/purchase', async (req, res) => {
   }
 })
 
+router.put('/:id/orders/:purchaseId/shipped', async (req, res) => {
+  try {
+    const { username, trackingCode } = req.body
+    const product = await Product.findById(req.params.id)
+
+    if (!product) {
+      return res.status(404).json({
+        error: 'Product not found',
+      })
+    }
+
+    if (getSellerUsername(product) !== username) {
+      return res.status(403).json({
+        error: 'Only the seller can update this order',
+      })
+    }
+
+    const order = product.purchaseHistory.id(req.params.purchaseId)
+
+    if (!order) {
+      return res.status(404).json({
+        error: 'Order not found',
+      })
+    }
+
+    order.status = 'shipped'
+    order.trackingCode = trackingCode || 'DEMO-PACKAGE-CODE'
+    order.shippedAt = new Date()
+    await product.save()
+
+    await User.findOneAndUpdate(
+      {
+        username: order.buyer,
+        'purchases.product': product._id,
+      },
+      {
+        $set: {
+          'purchases.$.shippingStatus': 'shipped',
+          'purchases.$.trackingCode': order.trackingCode,
+        },
+      }
+    )
+
+    res.status(200).json(product)
+  } catch (error) {
+    console.log(error)
+    res.status(500).json({
+      error: error.message,
+    })
+  }
+})
+
 router.put('/:id/bid', async (req, res) => {
   try {
     const { username, bidAmount } = req.body
@@ -530,6 +710,14 @@ router.put('/:id/bid', async (req, res) => {
     if (!artwork) {
       return res.status(404).json({
         error: 'Product not found',
+      })
+    }
+
+    await settleExpiredBid(artwork)
+
+    if (artwork.bidSettled || artwork.saleType !== 'bid') {
+      return res.status(400).json({
+        error: 'This bid has ended',
       })
     }
 
@@ -560,6 +748,14 @@ router.put('/:id/auto-bid', async (req, res) => {
     if (!artwork) {
       return res.status(404).json({
         error: 'Product not found',
+      })
+    }
+
+    await settleExpiredBid(artwork)
+
+    if (artwork.bidSettled || artwork.saleType !== 'bid') {
+      return res.status(400).json({
+        error: 'This bid has ended',
       })
     }
 

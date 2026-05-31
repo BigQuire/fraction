@@ -24,7 +24,9 @@
               <h2 class="mt-2 text-3xl font-black text-white">{{ giveaway.title }}</h2>
               <p class="mt-3 text-neutral-400">{{ giveaway.description }}</p>
               <p class="mt-4 text-sm font-semibold text-neutral-300">Prize: {{ giveaway.prize }}</p>
+              <p class="mt-2 text-sm text-neutral-500">Ends: {{ formatDateTime(giveaway.endAt) }}</p>
               <p class="mt-2 text-sm text-neutral-500">{{ giveaway.entries?.length || 0 }} total entries</p>
+              <p v-if="giveaway.winner" class="mt-2 text-sm font-semibold text-emerald-200">Winner: {{ giveaway.winner }}</p>
             </div>
 
             <form class="space-y-3" @submit.prevent="joinEvent(giveaway._id)">
@@ -91,6 +93,11 @@ const joinEvent = async (id) => {
     message.value = error.response?.data?.error || 'Could not submit giveaway entries.'
     isError.value = true
   }
+}
+
+const formatDateTime = (date) => {
+  if (!date) return 'Not set'
+  return new Date(date).toLocaleString()
 }
 
 onMounted(async () => {

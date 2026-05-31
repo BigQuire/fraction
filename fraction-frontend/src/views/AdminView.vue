@@ -42,9 +42,35 @@
           <input v-model="giveaway.title" class="field" placeholder="Event title" required />
           <input v-model="giveaway.prize" class="field" placeholder="Prize" required />
           <input v-model.number="giveaway.ticketCost" class="field" type="number" min="1" placeholder="1 ticket per entry" disabled />
+          <input v-model="giveaway.endAt" class="field" type="datetime-local" required />
           <textarea v-model="giveaway.description" class="field md:col-span-2" placeholder="Description"></textarea>
           <button class="premium-button w-fit" type="submit">Create Giveaway</button>
         </form>
+
+        <div class="mt-8 grid gap-4">
+          <article v-for="event in giveaways" :key="event._id" class="rounded-2xl border border-white/10 bg-white/5 p-4">
+            <div class="flex flex-col justify-between gap-4 lg:flex-row lg:items-start">
+              <div>
+                <p class="text-sm font-bold uppercase tracking-[0.2em] text-amber-200">{{ event.status }}</p>
+                <h3 class="mt-2 text-xl font-black text-white">{{ event.title }}</h3>
+                <p class="mt-2 text-neutral-400">Prize: {{ event.prize }}</p>
+                <p class="mt-2 text-sm text-neutral-500">Ends: {{ formatDateTime(event.endAt) }}</p>
+                <p class="mt-2 text-sm text-neutral-500">
+                  {{ uniqueParticipants(event).length }} users participated / {{ event.entries?.length || 0 }} entries
+                </p>
+                <p v-if="event.winner" class="mt-2 text-sm font-semibold text-emerald-200">Winner: {{ event.winner }}</p>
+              </div>
+              <button class="secondary-button px-4 py-2" @click="handleSelectWinner(event._id)">
+                Select Winner
+              </button>
+            </div>
+            <div v-if="event.entries?.length" class="mt-4 flex flex-wrap gap-2">
+              <span v-for="name in uniqueParticipants(event)" :key="name" class="rounded-full border border-white/10 bg-black/30 px-3 py-1 text-xs font-bold text-neutral-300">
+                {{ name }} x{{ participantEntryCount(event, name) }}
+              </span>
+            </div>
+          </article>
+        </div>
       </div>
 
       <div v-else-if="activeSection === 'verification'" class="glass-panel rounded-2xl p-6">
@@ -118,23 +144,27 @@ import { useRouter } from 'vue-router'
 import {
   createAdminGiveaway,
   fulfillAdminShippingRequest,
+  getAdminGiveaways,
   getAdminProducts,
   getAdminShippingRequests,
   getVerificationRequests,
   removeAdminProduct,
   reviewVerificationRequest,
+  selectAdminGiveawayWinner,
 } from '../services/adminService'
 
 const products = ref([])
 const router = useRouter()
 const verificationRequests = ref([])
 const shippingRequests = ref([])
+const giveaways = ref([])
 const activeSection = ref('products')
 const giveaway = ref({
   title: '',
   description: '',
   prize: '',
   ticketCost: 1,
+  endAt: '',
 })
 const adminSections = [
   { key: 'products', label: 'Products' },
@@ -158,6 +188,7 @@ const loadAdminData = async () => {
   products.value = await getAdminProducts()
   verificationRequests.value = await getVerificationRequests()
   shippingRequests.value = await getAdminShippingRequests()
+  giveaways.value = await getAdminGiveaways()
 }
 
 const handleRemoveProduct = async (id) => {
@@ -175,7 +206,8 @@ const handleVerification = async (username, status) => {
 
 const handleCreateGiveaway = async () => {
   await createAdminGiveaway(giveaway.value)
-  giveaway.value = { title: '', description: '', prize: '', ticketCost: 1 }
+  giveaway.value = { title: '', description: '', prize: '', ticketCost: 1, endAt: '' }
+  await loadAdminData()
 }
 
 const handleFulfillShipping = async (username, shipmentId) => {
@@ -187,6 +219,22 @@ const handleLogout = () => {
   localStorage.removeItem('user')
   localStorage.removeItem('admin-token')
   router.push('/login')
+}
+
+const uniqueParticipants = (event) => [...new Set((event.entries || []).map((entry) => entry.username))]
+
+const participantEntryCount = (event, username) => {
+  return (event.entries || []).filter((entry) => entry.username === username).length
+}
+
+const formatDateTime = (date) => {
+  if (!date) return 'Not set'
+  return new Date(date).toLocaleString()
+}
+
+const handleSelectWinner = async (id) => {
+  await selectAdminGiveawayWinner(id)
+  await loadAdminData()
 }
 
 onMounted(loadAdminData)

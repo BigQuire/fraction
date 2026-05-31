@@ -51,6 +51,16 @@
             </label>
 
             <label class="block">
+              <span class="mb-2 block text-sm font-semibold text-neutral-300">Sub Category</span>
+              <select v-model="selectedSubCategory" class="field">
+                <option value="all">All Sub Categories</option>
+                <option v-for="subCategory in availableSubCategories" :key="subCategory" :value="subCategory">
+                  {{ subCategory }}
+                </option>
+              </select>
+            </label>
+
+            <label class="block">
               <span class="mb-2 flex items-center justify-between text-sm font-semibold text-neutral-300">
                 <span>Max Price</span>
                 <span class="text-amber-200">{{ maxPrice ? formatCredits(maxPrice) : 'No limit' }}</span>
@@ -109,15 +119,24 @@ import { ref, onMounted, computed } from 'vue'
 
 import { getProducts } from '../services/productService'
 import { getProductImageUrl } from '../utils/productImage'
-import { categories, formatCredits } from '../utils/preferences'
+import { categories, formatCredits, subCategories } from '../utils/preferences'
 
 const artworks = ref([])
 const searchQuery = ref('')
 const selectedType = ref('all')
 const selectedCategory = ref('all')
+const selectedSubCategory = ref('all')
 const sortOption = ref('default')
 const maxPrice = ref('')
 const isLoading = ref(true)
+
+const availableSubCategories = computed(() => {
+  if (selectedCategory.value === 'all') {
+    return Object.values(subCategories).flat()
+  }
+
+  return subCategories[selectedCategory.value] || []
+})
 
 onMounted(async () => {
   try {
@@ -147,6 +166,7 @@ const resetFilters = () => {
   searchQuery.value = ''
   selectedType.value = 'all'
   selectedCategory.value = 'all'
+  selectedSubCategory.value = 'all'
   sortOption.value = 'default'
   maxPrice.value = ''
 }
@@ -166,6 +186,10 @@ const filteredArtworks = computed(() => {
 
   if (selectedCategory.value !== 'all') {
     filtered = filtered.filter((artwork) => artwork.category === selectedCategory.value)
+  }
+
+  if (selectedSubCategory.value !== 'all') {
+    filtered = filtered.filter((artwork) => artwork.subCategory === selectedSubCategory.value)
   }
 
   if (maxPrice.value !== '' && maxPrice.value !== null) {

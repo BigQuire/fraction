@@ -6,6 +6,14 @@ const commissionSchema = new mongoose.Schema({
   artworkId: { type: mongoose.Schema.Types.ObjectId, ref: 'Artwork' },
   title: { type: String, required: true },
   message: { type: String, required: true },
+  replies: [
+    {
+      fromUser: { type: String, required: true },
+      message: { type: String, required: true },
+      offerAmount: { type: Number, default: 0 },
+      createdAt: { type: Date, default: Date.now },
+    },
+  ],
   budget: { type: Number, default: 0 },
   deadline: { type: Date },
   status: { type: String, default: 'new' },

@@ -24,6 +24,12 @@ router.post('/:id/join', async (req, res) => {
       return res.status(404).json({ error: 'Giveaway not available' })
     }
 
+    if (giveaway.endAt && new Date(giveaway.endAt) <= new Date()) {
+      giveaway.status = 'ended'
+      await giveaway.save()
+      return res.status(400).json({ error: 'Giveaway has ended' })
+    }
+
     if (!user) {
       return res.status(404).json({ error: 'User not found' })
     }

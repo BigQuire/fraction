@@ -45,7 +45,7 @@
               {{ actionMessage }}
             </p>
           </div>
-          <button v-if="activeSection === 'collection'" class="premium-button w-fit" @click="showUploadModal = true">
+          <button v-if="activeSection === 'store'" class="premium-button w-fit" @click="showUploadModal = true">
             Upload Product
           </button>
         </div>
@@ -98,7 +98,7 @@
               empty-text="Upload your first collectible to start building your storefront."
               @edit="openEditModal"
               @delete="handleDelete"
-              @auction="startAuction"
+              @auction="openAuctionModal"
             />
           </div>
         </section>
@@ -109,6 +109,10 @@
             :artworks="artworks"
             empty-title="Your store is empty"
             empty-text="Products you upload will appear here for collectors to browse."
+            show-actions
+            @edit="openEditModal"
+            @delete="handleDelete"
+            @auction="openAuctionModal"
           />
         </section>
 
@@ -116,11 +120,11 @@
           <ArtworkGrid
             :artworks="artworks"
             empty-title="No products uploaded yet"
-            empty-text="Use the upload button to add a title, category, condition, sale type, and product image."
+            empty-text="Your owned and listed products are shown here. Upload new seller stock from Store."
             show-actions
             @edit="openEditModal"
             @delete="handleDelete"
-            @auction="startAuction"
+            @auction="openAuctionModal"
           />
         </section>
 
@@ -132,7 +136,7 @@
             show-actions
             @edit="openEditModal"
             @delete="handleDelete"
-            @auction="startAuction"
+            @auction="openAuctionModal"
           />
         </section>
 
@@ -214,6 +218,13 @@
                   <h2 class="mt-2 text-2xl font-black text-white">{{ commission.title }}</h2>
                   <p class="mt-2 text-neutral-400">From {{ commission.fromUser }}</p>
                   <p class="mt-4 leading-7 text-neutral-300">{{ commission.message }}</p>
+                  <div v-if="commission.replies?.length" class="mt-5 space-y-3">
+                    <div v-for="reply in commission.replies" :key="reply._id || reply.createdAt" class="rounded-2xl border border-white/10 bg-black/25 p-4">
+                      <p class="text-xs font-bold uppercase tracking-[0.2em] text-amber-200">{{ reply.fromUser }}</p>
+                      <p class="mt-2 text-neutral-300">{{ reply.message }}</p>
+                      <p v-if="reply.offerAmount" class="mt-2 text-sm font-semibold text-emerald-200">Offer: {{ formatCredits(reply.offerAmount) }}</p>
+                    </div>
+                  </div>
                 </div>
                 <div class="min-w-44 rounded-2xl border border-white/10 bg-white/5 p-4">
                   <p class="text-sm text-neutral-500">Budget</p>
@@ -227,6 +238,11 @@
                 <button class="secondary-button px-4 py-2" @click="changeCommissionStatus(commission._id, 'in-progress')">In Progress</button>
                 <button class="secondary-button px-4 py-2" @click="changeCommissionStatus(commission._id, 'completed')">Complete</button>
               </div>
+              <form class="mt-5 grid gap-3 border-t border-white/10 pt-5 md:grid-cols-[1fr_160px_auto]" @submit.prevent="replyToConversation(commission)">
+                <input v-model="conversationReplies[commission._id].message" class="field" placeholder="Reply or haggle message" required />
+                <input v-model.number="conversationReplies[commission._id].offerAmount" class="field" type="number" min="0" placeholder="Offer FRC" />
+                <button class="premium-button" type="submit">Send</button>
+              </form>
             </article>
           </div>
 
@@ -246,6 +262,7 @@
                 <h2 class="mt-2 text-2xl font-black text-white">{{ order.productTitle }}</h2>
                 <p class="mt-2 text-neutral-400">Buyer: {{ order.buyer }}</p>
                 <p class="mt-3 text-sm font-semibold text-amber-100">{{ formatCredits(order.price) }}</p>
+                <p v-if="order.trackingCode" class="mt-2 text-sm text-neutral-400">Package code: {{ order.trackingCode }}</p>
               </div>
               <div class="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-neutral-300 lg:min-w-80">
                 <p class="font-black text-white">{{ order.shipping.fullName }}</p>
@@ -254,6 +271,12 @@
                 <p v-if="order.shipping.addressLine2">{{ order.shipping.addressLine2 }}</p>
                 <p>{{ order.shipping.city }}, {{ order.shipping.state }} {{ order.shipping.postalCode }}</p>
                 <p>{{ order.shipping.country }}</p>
+              </div>
+              <div class="lg:w-72">
+                <input v-model="orderTrackingCodes[order.key]" class="field" placeholder="Package code" />
+                <button class="secondary-button mt-3 w-full px-4 py-2" @click="handleOrderShipped(order)">
+                  Item Shipped
+                </button>
               </div>
             </div>
           </article>
@@ -303,6 +326,16 @@
                 @click="handleSellInventory"
               >
                 Sell Gacha Items
+              </button>
+            </div>
+            <div class="mt-5 flex flex-wrap gap-2">
+              <button
+                v-for="filter in inventorySellFilters"
+                :key="filter"
+                class="secondary-button px-4 py-2"
+                @click="selectInventoryForSale(filter)"
+              >
+                Select {{ filter }}
               </button>
             </div>
           </div>
@@ -390,6 +423,7 @@
                 <p class="text-sm font-bold uppercase tracking-[0.2em] text-amber-200">{{ purchase.shippingStatus }}</p>
                 <h2 class="mt-2 text-2xl font-black text-white">{{ purchase.title || purchase.product?.title }}</h2>
                 <p class="mt-2 text-neutral-400">Seller: {{ purchase.seller }}</p>
+                <p v-if="purchase.trackingCode" class="mt-2 text-sm text-neutral-400">Package code: {{ purchase.trackingCode }}</p>
               </div>
               <div class="rounded-2xl border border-white/10 bg-white/5 p-4">
                 <p class="text-sm text-neutral-500">Paid</p>
@@ -496,6 +530,12 @@
           <select v-model="editingArtwork.category" class="field">
             <option v-for="category in categories" :key="category">{{ category }}</option>
           </select>
+          <select v-model="editingArtwork.subCategory" class="field">
+            <option value="">Sub category</option>
+            <option v-for="subCategory in subCategories[editingArtwork.category] || []" :key="subCategory">{{ subCategory }}</option>
+          </select>
+          <input v-model="editingArtwork.setName" placeholder="Set name" class="field" />
+          <input v-model="editingArtwork.era" placeholder="Era" class="field" />
           <select v-model="editingArtwork.condition" class="field">
             <option v-for="condition in conditions" :key="condition">{{ condition }}</option>
           </select>
@@ -532,6 +572,15 @@
               <option v-for="category in categories" :key="category">{{ category }}</option>
             </select>
 
+            <select v-model="uploadForm.subCategory" class="field">
+              <option value="">Sub category</option>
+              <option v-for="subCategory in uploadSubCategories" :key="subCategory">{{ subCategory }}</option>
+            </select>
+
+            <input v-model="uploadForm.setName" class="field" placeholder="Set name" />
+
+            <input v-model="uploadForm.era" class="field" placeholder="Era" />
+
             <select v-model="uploadForm.condition" class="field">
               <option v-for="condition in conditions" :key="condition">{{ condition }}</option>
             </select>
@@ -562,6 +611,23 @@
             </button>
             <button class="secondary-button" type="button" @click="showUploadModal = false">Cancel</button>
           </div>
+        </form>
+      </div>
+    </div>
+
+    <div v-if="auctionArtwork" class="fixed inset-0 z-50 flex items-center justify-center bg-black/75 px-5">
+      <div class="glass-panel w-full max-w-xl rounded-2xl p-6">
+        <div class="mb-6 flex items-center justify-between gap-4">
+          <h2 class="text-3xl font-black text-white">Start Timed Bid</h2>
+          <button class="secondary-button px-4 py-2" @click="auctionArtwork = null">Close</button>
+        </div>
+
+        <form class="space-y-4" @submit.prevent="startAuction">
+          <p class="text-neutral-400">
+            One stock from {{ auctionArtwork.title }} will move into a separate bid listing. Remaining stock stays on sale.
+          </p>
+          <input v-model="auctionEndTime" class="field" type="datetime-local" required />
+          <button class="premium-button" type="submit">Create Bid Listing</button>
         </form>
       </div>
     </div>
@@ -605,8 +671,8 @@
 import { computed, defineComponent, h, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import AdminView from './AdminView.vue'
-import { deleteProduct, getOwnerProducts, updateProduct, uploadProduct } from '../services/productService'
-import { getArtistCommissions, updateCommissionStatus } from '../services/commissionService'
+import { deleteProduct, getOwnerProducts, listProductForSale, markOrderShipped, updateProduct, uploadProduct } from '../services/productService'
+import { getArtistCommissions, replyCommission, updateCommissionStatus } from '../services/commissionService'
 import { getGiveaways, joinGiveaway } from '../services/giveawayService'
 import {
   addWalletBalance,
@@ -627,6 +693,7 @@ import {
   getStoredSettings,
   languages,
   regions,
+  subCategories,
 } from '../utils/preferences'
 
 const ArtworkGrid = defineComponent({
@@ -698,6 +765,8 @@ const activeSection = ref('dashboard')
 const artworks = ref([])
 const editingArtwork = ref(null)
 const showUploadModal = ref(false)
+const auctionArtwork = ref(null)
+const auctionEndTime = ref('')
 const selectedFile = ref(null)
 const uploadMessage = ref('')
 const uploadError = ref(false)
@@ -713,6 +782,8 @@ const balanceAmount = ref(1000)
 const balanceMessage = ref('')
 const balanceError = ref(false)
 const verificationMessage = ref('')
+const conversationReplies = ref({})
+const orderTrackingCodes = ref({})
 const showInventoryShipModal = ref(false)
 const selectedInventoryItemIds = ref([])
 const inventoryShipMessage = ref('')
@@ -756,12 +827,17 @@ const uploadForm = ref({
   description: '',
   price: '',
   category: categories[0],
+  subCategory: subCategories[categories[0]]?.[0] || '',
+  setName: '',
+  era: '',
   condition: conditions[0],
   sealed: false,
   authenticityNotes: '',
   saleType: 'sale',
   stockCount: 1,
 })
+const inventorySellFilters = ['All Gacha', 'Common', 'Rare', 'Epic', 'Legendary']
+const uploadSubCategories = computed(() => subCategories[uploadForm.value.category] || [])
 
 const activeBidArtworks = computed(() => artworks.value.filter((artwork) => artwork.saleType === 'bid' || artwork.saleType === 'both'))
 
@@ -803,10 +879,13 @@ const sellerOrders = computed(() => {
   return artworks.value.flatMap((artwork) =>
     (artwork.purchaseHistory || []).map((purchase) => ({
       key: `${artwork._id}-${purchase._id || purchase.createdAt}`,
+      productId: artwork._id,
+      purchaseId: purchase._id,
       productTitle: artwork.title,
       buyer: purchase.buyer,
       price: purchase.price,
       status: purchase.status || 'pending-shipment',
+      trackingCode: purchase.trackingCode || '',
       shipping: purchase.shippingDetails || {},
     }))
   )
@@ -881,6 +960,14 @@ const refreshArtworks = async () => {
 const refreshCommissions = async () => {
   if (!user.value?.username) return
   commissions.value = await getArtistCommissions(user.value.username)
+  commissions.value.forEach((commission) => {
+    if (!conversationReplies.value[commission._id]) {
+      conversationReplies.value[commission._id] = {
+        message: '',
+        offerAmount: '',
+      }
+    }
+  })
 }
 
 const refreshGiveaways = async () => {
@@ -926,6 +1013,9 @@ const resetUploadForm = () => {
     description: '',
     price: '',
     category: categories[0],
+    subCategory: subCategories[categories[0]]?.[0] || '',
+    setName: '',
+    era: '',
     condition: conditions[0],
     sealed: false,
     authenticityNotes: '',
@@ -955,6 +1045,9 @@ const handleUploadArtwork = async () => {
     formData.append('description', uploadForm.value.description)
     formData.append('price', uploadForm.value.price)
     formData.append('category', uploadForm.value.category)
+    formData.append('subCategory', uploadForm.value.subCategory)
+    formData.append('setName', uploadForm.value.setName)
+    formData.append('era', uploadForm.value.era)
     formData.append('condition', uploadForm.value.condition)
     formData.append('sealed', uploadForm.value.sealed)
     formData.append('authenticityNotes', uploadForm.value.authenticityNotes)
@@ -1049,21 +1142,65 @@ const handleSellInventory = async () => {
   }
 }
 
-const startAuction = async (artwork) => {
+const selectInventoryForSale = (filter) => {
+  selectedInventoryItemIds.value = inventoryItems.value
+    .filter((item) => item.source === 'gacha' && item.status === 'stored')
+    .filter((item) => filter === 'All Gacha' || item.rarity === filter)
+    .map((item) => item._id)
+}
+
+const openAuctionModal = (artwork) => {
+  auctionArtwork.value = artwork
+  const defaultEnd = new Date(Date.now() + 24 * 60 * 60 * 1000)
+  auctionEndTime.value = defaultEnd.toISOString().slice(0, 16)
+}
+
+const startAuction = async () => {
   try {
     const updatedArtwork = {
-      ...artwork,
+      username: user.value.username,
       saleType: 'bid',
-      currentBid: 1,
-      highestBidder: '',
-      bidEndTime: new Date(Date.now() + 24 * 60 * 60 * 1000),
+      bidEndTime: auctionEndTime.value,
     }
 
-    await updateProduct(artwork._id, updatedArtwork)
+    await listProductForSale(auctionArtwork.value._id, updatedArtwork)
     await refreshArtworks()
+    auctionArtwork.value = null
     setActionMessage('Product listed for bidding.')
   } catch (error) {
     setActionMessage(error.response?.data?.error || 'Could not list product for bidding.', true)
+  }
+}
+
+const replyToConversation = async (commission) => {
+  const reply = conversationReplies.value[commission._id]
+
+  try {
+    await replyCommission(commission._id, {
+      fromUser: user.value.username,
+      message: reply.message,
+      offerAmount: reply.offerAmount,
+    })
+    conversationReplies.value[commission._id] = { message: '', offerAmount: '' }
+    await refreshCommissions()
+    setActionMessage('Message sent.')
+  } catch (error) {
+    setActionMessage(error.response?.data?.error || 'Could not send message.', true)
+  }
+}
+
+const handleOrderShipped = async (order) => {
+  try {
+    const updated = await markOrderShipped(
+      order.productId,
+      order.purchaseId,
+      user.value.username,
+      orderTrackingCodes.value[order.key]
+    )
+    artworks.value = artworks.value.map((artwork) => artwork._id === updated._id ? updated : artwork)
+    setActionMessage('Order marked as shipped.')
+  } catch (error) {
+    setActionMessage(error.response?.data?.error || 'Could not update order shipment.', true)
   }
 }
 

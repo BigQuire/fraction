@@ -6,6 +6,9 @@ const giveawaySchema = new mongoose.Schema({
   prize: { type: String, required: true },
   ticketCost: { type: Number, default: 1 },
   status: { type: String, default: 'active' },
+  endAt: { type: Date },
+  winner: { type: String, default: '' },
+  winnerSelectedAt: { type: Date },
   entries: [
     {
       username: { type: String, required: true },

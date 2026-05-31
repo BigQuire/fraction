@@ -21,3 +21,8 @@ export const updateCommissionStatus = async (id, status) => {
   const response = await axios.put(`${API_URL}/${id}/status`, { status })
   return response.data
 }
+
+export const replyCommission = async (id, replyData) => {
+  const response = await axios.post(`${API_URL}/${id}/reply`, replyData)
+  return response.data
+}

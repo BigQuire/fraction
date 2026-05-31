@@ -53,6 +53,7 @@ const userSchema = new mongoose.Schema({
       seller: { type: String, default: '' },
       price: { type: Number, default: 0 },
       shippingStatus: { type: String, default: 'pending-shipment' },
+      trackingCode: { type: String, default: '' },
       createdAt: { type: Date, default: Date.now },
     },
   ],
