@@ -5,13 +5,11 @@
       <h1 class="mt-3 text-5xl font-black text-white">Collectibles Platform Control</h1>
     </div>
 
-    <form v-if="!isAdmin" class="glass-panel max-w-md rounded-2xl p-6 space-y-4" @submit.prevent="handleLogin">
-      <input v-model="email" class="field" type="email" placeholder="Admin email" required />
-      <input v-model="password" class="field" type="password" placeholder="Admin password" required />
-      <p class="text-sm text-neutral-400">Demo default: admin@fraction.test / admin123</p>
-      <p v-if="message" class="text-sm font-semibold text-rose-300">{{ message }}</p>
-      <button class="premium-button" type="submit">Login</button>
-    </form>
+    <div v-if="!isAdmin" class="glass-panel max-w-md rounded-2xl p-6">
+      <h2 class="text-2xl font-black text-white">Admin login required</h2>
+      <p class="mt-3 text-neutral-400">Use the normal login page with the demo admin credentials.</p>
+      <router-link to="/login" class="premium-button mt-6">Go to Login</router-link>
+    </div>
 
     <section v-else class="space-y-8">
       <div class="glass-panel rounded-2xl p-6">
@@ -67,14 +65,10 @@ import {
   createAdminGiveaway,
   getAdminProducts,
   getVerificationRequests,
-  loginAdmin,
   removeAdminProduct,
   reviewVerificationRequest,
 } from '../services/adminService'
 
-const email = ref('')
-const password = ref('')
-const message = ref('')
 const products = ref([])
 const verificationRequests = ref([])
 const giveaway = ref({
@@ -90,20 +84,6 @@ const loadAdminData = async () => {
   if (!isAdmin.value) return
   products.value = await getAdminProducts()
   verificationRequests.value = await getVerificationRequests()
-}
-
-const handleLogin = async () => {
-  try {
-    const response = await loginAdmin({
-      email: email.value,
-      password: password.value,
-    })
-    localStorage.setItem('admin-token', response.token)
-    message.value = ''
-    await loadAdminData()
-  } catch (error) {
-    message.value = error.response?.data?.error || 'Admin login failed.'
-  }
 }
 
 const handleRemoveProduct = async (id) => {

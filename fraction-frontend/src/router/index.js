@@ -8,6 +8,7 @@ import DashboardView from '../views/DashboardView.vue'
 import RegisterView from '@/views/RegisterView.vue'
 import AdminView from '../views/AdminView.vue'
 import ReviewsView from '../views/ReviewsView.vue'
+import SellerProfileView from '../views/SellerProfileView.vue'
 
 const routes = [
   {
@@ -44,6 +45,11 @@ const routes = [
     path: '/reviews',
     name: 'reviews',
     component: ReviewsView,
+  },
+  {
+    path: '/seller/:username',
+    name: 'seller-profile',
+    component: SellerProfileView,
   },
   {
     path: '/admin',

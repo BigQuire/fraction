@@ -9,20 +9,13 @@
     </div>
 
     <section class="grid gap-8 lg:grid-cols-[360px_1fr]">
-      <form class="glass-panel h-fit rounded-2xl p-6 space-y-4" @submit.prevent="submitReview">
-        <input v-model="seller" class="field" placeholder="Seller username" required @change="loadReviews" />
-        <input v-model="reviewer" class="field" placeholder="Your username" required />
-        <select v-model.number="rating" class="field">
-          <option v-for="score in [5, 4, 3, 2, 1]" :key="score" :value="score">
-            {{ score }} stars
-          </option>
-        </select>
-        <textarea v-model="comment" class="field min-h-32" placeholder="How was the seller's service, packaging, and product accuracy?"></textarea>
-        <p v-if="message" class="text-sm font-semibold" :class="hasError ? 'text-rose-300' : 'text-emerald-300'">
-          {{ message }}
+      <div class="glass-panel h-fit rounded-2xl p-6 space-y-4">
+        <p class="text-neutral-400">
+          Reviews are now attached to each seller's public profile. Enter a seller username to open their profile and review them there.
         </p>
-        <button class="premium-button" type="submit">Submit Review</button>
-      </form>
+        <input v-model="seller" class="field" placeholder="Seller username" required @change="loadReviews" />
+        <router-link :to="`/seller/${seller || 'seller'}`" class="premium-button">Open Seller Profile</router-link>
+      </div>
 
       <section class="space-y-5">
         <div class="glass-panel rounded-2xl p-6">
@@ -54,16 +47,11 @@
 
 <script setup>
 import { ref } from 'vue'
-import { createReview, getSellerReviews } from '../services/reviewService'
+import { getSellerReviews } from '../services/reviewService'
 
 const seller = ref('')
-const reviewer = ref(JSON.parse(localStorage.getItem('user') || 'null')?.username || '')
-const rating = ref(5)
-const comment = ref('')
 const reviews = ref([])
 const summary = ref({})
-const message = ref('')
-const hasError = ref(false)
 
 const loadReviews = async () => {
   if (!seller.value) return
@@ -72,23 +60,4 @@ const loadReviews = async () => {
   summary.value = response.summary
 }
 
-const submitReview = async () => {
-  message.value = ''
-  hasError.value = false
-
-  try {
-    await createReview({
-      seller: seller.value,
-      reviewer: reviewer.value,
-      rating: rating.value,
-      comment: comment.value,
-    })
-    comment.value = ''
-    message.value = 'Review submitted.'
-    await loadReviews()
-  } catch (error) {
-    message.value = error.response?.data?.error || 'Could not submit review.'
-    hasError.value = true
-  }
-}
 </script>

@@ -79,8 +79,6 @@ const isMenuOpen = ref(false)
 const navItems = [
   { to: '/', label: 'Home' },
   { to: '/marketplace', label: 'Marketplace' },
-  { to: '/reviews', label: 'Reviews' },
-  { to: '/admin', label: 'Admin' },
 ]
 
 const user = computed(() => {

@@ -34,6 +34,12 @@
             Seller: {{ artwork.owner || artwork.artist }}
             <span v-if="artwork.sellerVerified" class="ml-2 text-sm font-bold text-amber-200">Verified</span>
           </p>
+          <router-link
+            :to="`/seller/${artwork.owner || artwork.artist}`"
+            class="mt-3 inline-flex text-sm font-bold text-amber-200 hover:text-amber-100"
+          >
+            View seller profile
+          </router-link>
 
           <p class="mt-8 leading-8 text-neutral-300">
             {{ artwork.description || 'No description has been added for this artwork yet.' }}

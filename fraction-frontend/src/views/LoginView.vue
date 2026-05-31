@@ -48,6 +48,9 @@
               Register here
             </router-link>
           </p>
+          <p class="mt-4 rounded-2xl border border-amber-200/20 bg-amber-200/10 p-4 text-center text-xs font-semibold text-amber-100">
+            Lecturer admin demo: admin@fraction.test / admin123
+          </p>
         </div>
       </div>
     </section>
@@ -58,6 +61,7 @@
 import { ref } from 'vue'
 
 import { loginUser } from '../services/userService'
+import { loginAdmin } from '../services/adminService'
 import { useRouter } from 'vue-router'
 
 const email = ref('')
@@ -71,6 +75,17 @@ const handleLogin = async () => {
   errorMessage.value = ''
 
   try {
+    if (email.value === 'admin@fraction.test' && password.value === 'admin123') {
+      const response = await loginAdmin({
+        email: email.value,
+        password: password.value,
+      })
+      localStorage.setItem('admin-token', response.token)
+      localStorage.removeItem('user')
+      router.push('/admin')
+      return
+    }
+
     const userData = {
       email: email.value,
       password: password.value,
