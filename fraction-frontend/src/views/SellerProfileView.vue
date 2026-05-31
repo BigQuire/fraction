@@ -38,10 +38,10 @@
         <h2 class="text-3xl font-black text-white">Selling Products</h2>
       </div>
       <div v-if="products.length" class="grid gap-7 sm:grid-cols-2 lg:grid-cols-3">
-        <ArtworkCard
+        <ProductCard
           v-for="product in products"
           :key="product._id"
-          :image="getArtworkImageUrl(product.imageUrl)"
+          :image="getProductImageUrl(product.imageUrl)"
           :title="product.title"
           :artist="product.owner || product.artist"
           :price="product.saleType === 'bid' ? product.currentBid || 1 : product.price"
@@ -85,11 +85,11 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
-import ArtworkCard from '../components/ArtworkCard.vue'
-import { getArtworks } from '../services/artworkService'
+import ProductCard from '../components/ProductCard.vue'
+import { getProducts } from '../services/productService'
 import { getUserProfile } from '../services/userService'
 import { createReview, getSellerReviews } from '../services/reviewService'
-import { getArtworkImageUrl } from '../utils/artworkImage'
+import { getProductImageUrl } from '../utils/productImage'
 
 const route = useRoute()
 const seller = ref(null)
@@ -111,7 +111,7 @@ const activeListing = (product) => {
 
 const loadSeller = async () => {
   seller.value = await getUserProfile(route.params.username)
-  const allProducts = await getArtworks()
+  const allProducts = await getProducts()
   products.value = allProducts.filter(activeListing)
   const reviewResponse = await getSellerReviews(route.params.username)
   reviews.value = reviewResponse.reviews

@@ -1,45 +1,45 @@
 import axios from 'axios'
 
-const API_URL = 'https://fraction-hfg4.onrender.com/api/artworks'
+const API_URL = 'https://fraction-hfg4.onrender.com/api/products'
 
-export const getArtworks = async () => {
+export const getProducts = async () => {
 
   const response = await axios.get(API_URL)
   return response.data
 }
 
-export const getArtworkById = async (id) => {
+export const getProductById = async (id) => {
 
   const response = await axios.get(`${API_URL}/${id}`)
   return response.data
 }
 
-export const getArtistArtworks = async (artist) => {
+export const getSellerProducts = async (artist) => {
 
   const response = await axios.get(`${API_URL}/artist/${artist}`)
   return response.data
 }
 
-export const getOwnerArtworks = async (owner) => {
+export const getOwnerProducts = async (owner) => {
 
   const response = await axios.get(`${API_URL}/owner/${owner}`)
   return response.data
 }
 
 
-export const deleteArtwork = async (id) => {
+export const deleteProduct = async (id) => {
 
   const response = await axios.delete(`${API_URL}/${id}`)
   return response.data
 }
 
-export const updateArtwork = async (id, updatedData) => {
+export const updateProduct = async (id, updatedData) => {
 
   const response = await axios.put(`${API_URL}/${id}`, updatedData)
   return response.data
 }
 
-export const uploadArtwork = async (formData) => {
+export const uploadProduct = async (formData) => {
 
   const response = await axios.post(`${API_URL}/upload`, formData)
   return response.data
@@ -57,14 +57,24 @@ export const setAutoBid = async (id, username, maxBid) => {
   return response.data
 }
 
-export const purchaseArtwork = async (id, username) => {
+export const purchaseProduct = async (id, username, shippingDetails) => {
 
-  const response = await axios.put(`${API_URL}/${id}/purchase`, { username })
+  const response = await axios.put(`${API_URL}/${id}/purchase`, { username, shippingDetails })
   return response.data
 }
 
-export const listArtworkForSale = async (id, listingData) => {
+export const listProductForSale = async (id, listingData) => {
 
   const response = await axios.put(`${API_URL}/${id}/list`, listingData)
   return response.data
 }
+
+export const getArtworks = getProducts
+export const getArtworkById = getProductById
+export const getArtistArtworks = getSellerProducts
+export const getOwnerArtworks = getOwnerProducts
+export const deleteArtwork = deleteProduct
+export const updateArtwork = updateProduct
+export const uploadArtwork = uploadProduct
+export const purchaseArtwork = purchaseProduct
+export const listArtworkForSale = listProductForSale

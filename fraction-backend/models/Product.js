@@ -1,7 +1,7 @@
 
 const mongoose = require('mongoose')
 
-const artworkSchema = new mongoose.Schema({
+const productSchema = new mongoose.Schema({
 
   title: { type: String, required: true, },
 
@@ -20,6 +20,8 @@ const artworkSchema = new mongoose.Schema({
   category: { type: String, default: 'Anime', },
 
   productType: { type: String, default: 'Collectible' },
+
+  stockCount: { type: Number, default: 1, min: 0 },
 
   condition: { type: String, default: 'Good' },
 
@@ -67,6 +69,26 @@ const artworkSchema = new mongoose.Schema({
       createdAt: { type: Date, default: Date.now },
     },
   ],
+
+  purchaseHistory: [
+    {
+      buyer: { type: String, required: true },
+      quantity: { type: Number, default: 1 },
+      price: { type: Number, required: true },
+      shippingDetails: {
+        fullName: { type: String, default: '' },
+        phone: { type: String, default: '' },
+        addressLine1: { type: String, default: '' },
+        addressLine2: { type: String, default: '' },
+        city: { type: String, default: '' },
+        state: { type: String, default: '' },
+        postalCode: { type: String, default: '' },
+        country: { type: String, default: '' },
+      },
+      status: { type: String, default: 'pending-shipment' },
+      createdAt: { type: Date, default: Date.now },
+    },
+  ],
 })
 
-module.exports = mongoose.model('Artwork', artworkSchema)
+module.exports = mongoose.model('Artwork', productSchema)

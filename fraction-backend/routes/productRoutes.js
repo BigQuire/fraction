@@ -7,7 +7,7 @@ const { CloudinaryStorage } = require('multer-storage-cloudinary')
 
 const cloudinary = require('../config/cloudinary')
 
-const Artwork = require('../models/Artwork')
+const Product = require('../models/Product')
 const User = require('../models/User')
 
 const BID_INCREMENT = 1
@@ -19,7 +19,7 @@ const getSellerUsername = (artwork) => artwork.owner || artwork.artist
 const refreshUserNetWorth = async (username) => {
   if (!username) return null
 
-  const ownedArtworks = await Artwork.find({ owner: username })
+  const ownedArtworks = await Product.find({ owner: username })
   const netWorth = ownedArtworks.reduce(
     (total, artwork) => total + Number(artwork.price || 0),
     0
@@ -47,7 +47,7 @@ const validateListingUpdate = (artwork, updatedData) => {
     && listingSaleTypes.includes(updatedData.saleType)
     && isCooldownActive(artwork)
   ) {
-    throw new Error('This artwork is in resale cooldown')
+    throw new Error('This product is in resale cooldown')
   }
 }
 
@@ -129,7 +129,7 @@ const storage = new CloudinaryStorage({
   cloudinary,
   params: async (req, file) => {
     return {
-      folder: 'fraction-artworks',
+      folder: 'fraction-products',
       resource_type: 'image',
     }
   },
@@ -139,7 +139,13 @@ const upload = multer({ storage })
 
 router.get('/', async (req, res) => {
   try {
-    const artworks = await Artwork.find({ removedByAdmin: { $ne: true } }).lean()
+    const artworks = await Product.find({
+      removedByAdmin: { $ne: true },
+      $or: [
+        { stockCount: { $gt: 0 } },
+        { stockCount: { $exists: false } },
+      ],
+    }).lean()
     const sellers = await User.find({
       username: { $in: artworks.map((artwork) => artwork.owner || artwork.artist) },
     }).lean()
@@ -196,7 +202,7 @@ router.post(
         authenticityNotes,
       } = req.body
 
-      const artwork = new Artwork({
+      const artwork = new Product({
         title,
         artist,
         description,
@@ -204,6 +210,7 @@ router.post(
         saleType,
         category,
         productType,
+        stockCount: Math.max(Number(req.body.stockCount || 1), 0),
         condition,
         sealed: sealed === 'true' || sealed === true,
         authenticityNotes,
@@ -222,7 +229,7 @@ router.post(
       await refreshUserNetWorth(artist)
 
       res.status(201).json({
-        message: 'Artwork uploaded successfully',
+        message: 'Product uploaded successfully',
         artwork,
       })
     } catch (error) {
@@ -237,7 +244,7 @@ router.post(
 
 router.get('/artist/:artist', async (req, res) => {
   try {
-    const artworks = await Artwork.find({
+    const artworks = await Product.find({
       artist: req.params.artist,
       removedByAdmin: { $ne: true },
     })
@@ -253,7 +260,7 @@ router.get('/artist/:artist', async (req, res) => {
 
 router.get('/owner/:owner', async (req, res) => {
   try {
-    const artworks = await Artwork.find({
+    const artworks = await Product.find({
       owner: req.params.owner,
       removedByAdmin: { $ne: true },
     })
@@ -269,7 +276,7 @@ router.get('/owner/:owner', async (req, res) => {
 
 router.get('/:id', async (req, res) => {
   try {
-    const artwork = await Artwork.findById(req.params.id).lean()
+    const artwork = await Product.findById(req.params.id).lean()
     const seller = await User.findOne({ username: artwork?.owner || artwork?.artist }).lean()
     res.status(200).json({
       ...artwork,
@@ -288,9 +295,9 @@ router.get('/:id', async (req, res) => {
 
 router.delete('/:id', async (req, res) => {
   try {
-    await Artwork.findByIdAndDelete(req.params.id)
+    await Product.findByIdAndDelete(req.params.id)
     res.status(200).json({
-      message: 'Artwork deleted successfully',
+      message: 'Product deleted successfully',
     })
   } catch (error) {
     console.log(error)
@@ -302,18 +309,18 @@ router.delete('/:id', async (req, res) => {
 
 router.put('/:id', async (req, res) => {
   try {
-    const artwork = await Artwork.findById(req.params.id)
+    const artwork = await Product.findById(req.params.id)
 
     if (!artwork) {
       return res.status(404).json({
-        error: 'Artwork not found',
+        error: 'Product not found',
       })
     }
 
     validateListingUpdate(artwork, req.body)
 
     const updatedArtwork =
-      await Artwork.findByIdAndUpdate(
+      await Product.findByIdAndUpdate(
         req.params.id,
         req.body,
         { new: true }
@@ -330,17 +337,17 @@ router.put('/:id', async (req, res) => {
 router.put('/:id/list', async (req, res) => {
   try {
     const { username, price, saleType } = req.body
-    const artwork = await Artwork.findById(req.params.id)
+    const artwork = await Product.findById(req.params.id)
 
     if (!artwork) {
       return res.status(404).json({
-        error: 'Artwork not found',
+        error: 'Product not found',
       })
     }
 
     if (artwork.owner !== username) {
       return res.status(403).json({
-        error: 'Only the owner can list this artwork',
+        error: 'Only the owner can list this product',
       })
     }
 
@@ -380,18 +387,24 @@ router.put('/:id/list', async (req, res) => {
 
 router.put('/:id/purchase', async (req, res) => {
   try {
-    const { username } = req.body
-    const artwork = await Artwork.findById(req.params.id)
+    const { username, shippingDetails = {} } = req.body
+    const artwork = await Product.findById(req.params.id)
 
     if (!artwork) {
       return res.status(404).json({
-        error: 'Artwork not found',
+        error: 'Product not found',
       })
     }
 
     if (!['sale', 'both'].includes(artwork.saleType)) {
       return res.status(400).json({
-        error: 'This artwork is not available for direct purchase',
+        error: 'This product is not available for direct purchase',
+      })
+    }
+
+    if (Number(artwork.stockCount ?? 1) <= 0) {
+      return res.status(400).json({
+        error: 'This product is out of stock',
       })
     }
 
@@ -399,7 +412,26 @@ router.put('/:id/purchase', async (req, res) => {
 
     if (sellerUsername === username) {
       return res.status(400).json({
-        error: 'You already own this artwork',
+        error: 'You cannot buy your own product',
+      })
+    }
+
+    const requiredShippingFields = [
+      'fullName',
+      'phone',
+      'addressLine1',
+      'city',
+      'state',
+      'postalCode',
+      'country',
+    ]
+    const missingShippingField = requiredShippingFields.find(
+      (field) => !String(shippingDetails[field] || '').trim()
+    )
+
+    if (missingShippingField) {
+      return res.status(400).json({
+        error: 'Complete the shipping details before purchasing',
       })
     }
 
@@ -419,44 +451,55 @@ router.put('/:id/purchase', async (req, res) => {
       })
     }
 
-    buyer.walletBalance -= price
-    await buyer.save()
-
     if (seller) {
       seller.walletBalance += price
       seller.tickets += 1
       await seller.save()
     }
 
+    buyer.walletBalance -= price
     buyer.tickets += 1
+    buyer.netWorth += price
+    buyer.purchases.push({
+      product: artwork._id,
+      title: artwork.title,
+      seller: sellerUsername,
+      price,
+      shippingStatus: 'pending-shipment',
+    })
     await buyer.save()
 
-    artwork.previousOwner = sellerUsername
-    artwork.owner = username
-    artwork.ownedAt = new Date()
-    artwork.resaleAvailableAt = new Date(
-      Date.now() + RESALE_COOLDOWN_DAYS * 24 * 60 * 60 * 1000
-    )
+    artwork.stockCount = Math.max(Number(artwork.stockCount ?? 1) - 1, 0)
     artwork.lastSalePrice = price
-    artwork.saleType = 'owned'
-    artwork.currentBid = 0
-    artwork.highestBidder = ''
-    artwork.autoBids = []
+    if (artwork.stockCount === 0) {
+      artwork.saleType = 'sold-out'
+      artwork.currentBid = 0
+      artwork.highestBidder = ''
+      artwork.autoBids = []
+    }
     artwork.priceHistory.push({
       price,
       event: 'sale',
       buyer: username,
       seller: sellerUsername,
     })
+    artwork.purchaseHistory.push({
+      buyer: username,
+      quantity: 1,
+      price,
+      shippingDetails,
+      status: 'pending-shipment',
+    })
     await artwork.save()
 
-    const updatedBuyer = await refreshUserNetWorth(username)
+    const updatedBuyer = await User.findOne({ username })
+      .populate('wishlist')
+      .populate('purchases.product')
     await refreshUserNetWorth(sellerUsername)
 
     res.status(200).json({
       artwork,
       user: updatedBuyer,
-      resaleAvailableAt: artwork.resaleAvailableAt,
     })
   } catch (error) {
     console.log(error)
@@ -469,18 +512,18 @@ router.put('/:id/purchase', async (req, res) => {
 router.put('/:id/bid', async (req, res) => {
   try {
     const { username, bidAmount } = req.body
-    const artwork = await Artwork.findById(
+    const artwork = await Product.findById(
       req.params.id
     )
     if (!artwork) {
       return res.status(404).json({
-        error: 'Artwork not found',
+        error: 'Product not found',
       })
     }
 
     if (getSellerUsername(artwork) === username) {
       return res.status(400).json({
-        error: 'You cannot bid on your own artwork',
+        error: 'You cannot bid on your own product',
       })
     }
 
@@ -500,11 +543,11 @@ router.put('/:id/auto-bid', async (req, res) => {
   try {
     const { username, maxBid } = req.body
     const maxBidAmount = Number(maxBid)
-    const artwork = await Artwork.findById(req.params.id)
+    const artwork = await Product.findById(req.params.id)
 
     if (!artwork) {
       return res.status(404).json({
-        error: 'Artwork not found',
+        error: 'Product not found',
       })
     }
 
@@ -516,7 +559,7 @@ router.put('/:id/auto-bid', async (req, res) => {
 
     if (getSellerUsername(artwork) === username) {
       return res.status(400).json({
-        error: 'You cannot auto bid on your own artwork',
+        error: 'You cannot auto bid on your own product',
       })
     }
 

@@ -5,7 +5,9 @@ const User = require('../models/User')
 
 router.get('/:username', async (req, res) => {
   try {
-    const user = await User.findOne({ username: req.params.username }).populate('wishlist')
+    const user = await User.findOne({ username: req.params.username })
+      .populate('wishlist')
+      .populate('purchases.product')
 
     if (!user) {
       return res.status(404).json({
@@ -87,13 +89,51 @@ router.put('/:username/wallet', async (req, res) => {
       { username: req.params.username },
       { $inc: { walletBalance: amount } },
       { new: true }
-    ).populate('wishlist')
+    ).populate('wishlist').populate('purchases.product')
 
     if (!user) {
       return res.status(404).json({
         message: 'User not found',
       })
     }
+
+    res.status(200).json(user)
+  } catch (error) {
+    res.status(500).json({
+      error: error.message,
+    })
+  }
+})
+
+router.put('/:username/wallet/spend', async (req, res) => {
+  try {
+    const amount = Number(req.body.amount)
+
+    if (!Number.isFinite(amount) || amount <= 0) {
+      return res.status(400).json({
+        error: 'Enter a valid amount to spend',
+      })
+    }
+
+    const user = await User.findOne({ username: req.params.username })
+
+    if (!user) {
+      return res.status(404).json({
+        message: 'User not found',
+      })
+    }
+
+    if (Number(user.walletBalance || 0) < amount) {
+      return res.status(400).json({
+        error: 'Insufficient wallet balance',
+      })
+    }
+
+    user.walletBalance -= amount
+    await user.save()
+
+    await user.populate('wishlist')
+    await user.populate('purchases.product')
 
     res.status(200).json(user)
   } catch (error) {

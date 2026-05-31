@@ -3,9 +3,9 @@ const mongoose = require('mongoose')
 const cors = require('cors')
 require('dotenv').config()
 
-const Artwork = require('./models/Artwork')
+const Product = require('./models/Product')
 const userRoutes = require('./routes/userRoutes')
-const artworkRoutes = require('./routes/artworkRoutes')
+const productRoutes = require('./routes/productRoutes')
 const commissionRoutes = require('./routes/commissionRoutes')
 const adminRoutes = require('./routes/adminRoutes')
 const giveawayRoutes = require('./routes/giveawayRoutes')
@@ -16,7 +16,8 @@ const app = express()
 app.use(cors())
 app.use(express.json())
 app.use('/api/users', userRoutes)
-app.use('/api/artworks', artworkRoutes)
+app.use('/api/products', productRoutes)
+app.use('/api/artworks', productRoutes)
 app.use('/api/commissions', commissionRoutes)
 app.use('/api/admin', adminRoutes)
 app.use('/api/giveaways', giveawayRoutes)
@@ -31,16 +32,19 @@ app.get('/', (req, res) => {
   res.send('Backend Running')
 })
 
-app.post('/api/artworks', async (req, res) => {
+const createProduct = async (req, res) => {
   try {
-    const artwork = new Artwork(req.body)
-    await artwork.save()
+    const product = new Product(req.body)
+    await product.save()
 
-    res.status(201).json(artwork)
+    res.status(201).json(product)
   } catch (error) {
     res.status(500).json({ message: error.message })
   }
-})
+}
+
+app.post('/api/products', createProduct)
+app.post('/api/artworks', createProduct)
 
 const PORT = process.env.PORT || 5000
 

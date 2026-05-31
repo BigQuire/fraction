@@ -1,6 +1,6 @@
 <template>
   <article
-    @click="goToArtwork"
+    @click="goToProduct"
     class="group cursor-pointer overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/25 transition duration-300 hover:-translate-y-1 hover:border-amber-200/35 hover:bg-white/[0.07]"
   >
     <div class="relative aspect-[4/5] overflow-hidden bg-neutral-900">
@@ -34,7 +34,7 @@
         </div>
 
         <router-link
-          :to="`/artwork/${id}`"
+          :to="`/product/${id}`"
           class="rounded-full border border-white/10 px-4 py-2 text-sm font-bold text-white transition hover:border-amber-200/50 hover:text-amber-100"
           @click.stop
         >
@@ -73,9 +73,9 @@ const badgeClass = computed(() => {
   return 'border-emerald-300/30 bg-emerald-400/20 text-emerald-100'
 })
 
-const goToArtwork = () => {
+const goToProduct = () => {
 
-  router.push(`/artwork/${props.id}`)
+  router.push(`/product/${props.id}`)
 
 }
 

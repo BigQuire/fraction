@@ -19,7 +19,7 @@
           </p>
           <div class="mt-9 flex flex-col gap-3 sm:flex-row">
             <router-link to="/marketplace" class="premium-button">Explore Marketplace</router-link>
-            <router-link to="/register" class="secondary-button">Start Collecting</router-link>
+            <router-link :to="startCollectingTo" class="secondary-button">Start Collecting</router-link>
           </div>
         </div>
       </div>
@@ -44,10 +44,10 @@
       </div>
 
       <div v-if="saleArtworks.length" class="grid grid-cols-1 gap-7 sm:grid-cols-2 lg:grid-cols-4">
-        <ArtworkCard
+        <ProductCard
           v-for="artwork in saleArtworks.slice(0, 4)"
           :key="artwork._id"
-          :image="getArtworkImageUrl(artwork.imageUrl)"
+          :image="getProductImageUrl(artwork.imageUrl)"
           :title="artwork.title"
           :artist="artwork.artist"
           :price="artwork.price"
@@ -70,10 +70,10 @@
       </div>
 
       <div v-if="bidArtworks.length" class="grid grid-cols-1 gap-7 sm:grid-cols-2 lg:grid-cols-4">
-        <ArtworkCard
+        <ProductCard
           v-for="artwork in bidArtworks.slice(0, 4)"
           :key="artwork._id"
-          :image="getArtworkImageUrl(artwork.imageUrl)"
+          :image="getProductImageUrl(artwork.imageUrl)"
           :title="artwork.title"
           :artist="artwork.artist"
           :price="artwork.currentBid || 1"
@@ -92,11 +92,19 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 
-import ArtworkCard from '../components/ArtworkCard.vue'
-import { getArtworks } from '../services/artworkService'
-import { getArtworkImageUrl } from '../utils/artworkImage'
+import ProductCard from '../components/ProductCard.vue'
+import { getProducts } from '../services/productService'
+import { getProductImageUrl } from '../utils/productImage'
 
 const artworks = ref([])
+
+const startCollectingTo = computed(() => {
+  try {
+    return JSON.parse(localStorage.getItem('user') || 'null') ? '/dashboard' : '/register'
+  } catch {
+    return '/register'
+  }
+})
 
 const stats = computed(() => [
   { value: artworks.value.length, label: 'Products' },
@@ -107,7 +115,7 @@ const stats = computed(() => [
 
 onMounted(async () => {
   try {
-    artworks.value = await getArtworks()
+    artworks.value = await getProducts()
   } catch (error) {
     console.error(error)
   }
@@ -115,13 +123,13 @@ onMounted(async () => {
 
 const saleArtworks = computed(() => {
   return artworks.value.filter(
-    (artwork) => artwork.saleType === 'sale' || artwork.saleType === 'both'
+    (artwork) => (artwork.saleType === 'sale' || artwork.saleType === 'both') && Number(artwork.stockCount ?? 1) > 0
   )
 })
 
 const bidArtworks = computed(() => {
   return artworks.value.filter(
-    (artwork) => artwork.saleType === 'bid' || artwork.saleType === 'both'
+    (artwork) => (artwork.saleType === 'bid' || artwork.saleType === 'both') && Number(artwork.stockCount ?? 1) > 0
   )
 })
 </script>

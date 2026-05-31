@@ -15,7 +15,7 @@
       <div class="grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,1.05fr)_minmax(360px,0.95fr)]">
         <div class="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04]">
           <img
-            :src="getArtworkImageUrl(artwork.imageUrl)"
+            :src="getProductImageUrl(artwork.imageUrl)"
             :alt="artwork.title"
             class="aspect-square w-full object-cover"
           />
@@ -42,7 +42,7 @@
           </router-link>
 
           <p class="mt-8 leading-8 text-neutral-300">
-            {{ artwork.description || 'No description has been added for this artwork yet.' }}
+            {{ artwork.description || 'No description has been added for this product yet.' }}
           </p>
 
           <div class="mt-6 grid grid-cols-2 gap-3 text-sm text-neutral-400">
@@ -63,13 +63,21 @@
             </div>
           </div>
 
+          <div class="mt-4 rounded-2xl border border-white/10 bg-white/5 p-4">
+            <p class="text-sm text-neutral-500">Stock Available</p>
+            <p class="mt-1 text-2xl font-black" :class="stockAvailable ? 'text-emerald-200' : 'text-rose-200'">
+              {{ stockAvailable ? `${artwork.stockCount ?? 1} in stock` : 'Out of stock' }}
+            </p>
+          </div>
+
           <div class="mt-8 flex flex-col gap-3 sm:flex-row">
             <button
               v-if="artwork.saleType === 'sale' || artwork.saleType === 'both'"
               class="premium-button"
-              @click="handlePurchase"
+              :disabled="!stockAvailable"
+              @click="showShippingModal = true"
             >
-              Buy Now
+              {{ stockAvailable ? 'Buy Now' : 'Out of Stock' }}
             </button>
             <button class="secondary-button" @click="toggleWishlist">
               {{ isWishlisted ? 'Remove Wishlist' : 'Add Wishlist' }}
@@ -107,11 +115,8 @@
           </p>
 
           <div v-if="artwork.owner" class="mt-6 rounded-2xl border border-white/10 bg-white/5 p-4">
-            <p class="text-sm text-neutral-500">Current Owner</p>
+            <p class="text-sm text-neutral-500">Store Owner</p>
             <p class="mt-1 font-bold text-white">{{ artwork.owner }}</p>
-            <p v-if="artwork.resaleAvailableAt" class="mt-2 text-sm text-neutral-500">
-              Resale available: {{ formatDate(artwork.resaleAvailableAt) }}
-            </p>
           </div>
 
           <div v-if="artwork.saleType === 'bid' || artwork.saleType === 'both'" class="glass-panel mt-8 rounded-2xl p-6">
@@ -174,6 +179,34 @@
       <router-link to="/marketplace" class="premium-button mt-6">Return to Marketplace</router-link>
     </section>
 
+    <div v-if="showShippingModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/75 px-5">
+      <div class="glass-panel w-full max-w-2xl rounded-2xl p-6">
+        <div class="mb-6 flex items-center justify-between gap-4">
+          <h2 class="text-3xl font-black text-white">Shipping Details</h2>
+          <button class="secondary-button px-4 py-2" @click="showShippingModal = false">Close</button>
+        </div>
+
+        <form class="space-y-4" @submit.prevent="handlePurchase">
+          <div class="grid gap-4 sm:grid-cols-2">
+            <input v-model="shippingForm.fullName" class="field" placeholder="Full name" required />
+            <input v-model="shippingForm.phone" class="field" placeholder="Phone number" required />
+          </div>
+          <input v-model="shippingForm.addressLine1" class="field" placeholder="Address line 1" required />
+          <input v-model="shippingForm.addressLine2" class="field" placeholder="Address line 2" />
+          <div class="grid gap-4 sm:grid-cols-3">
+            <input v-model="shippingForm.city" class="field" placeholder="City" required />
+            <input v-model="shippingForm.state" class="field" placeholder="State / region" required />
+            <input v-model="shippingForm.postalCode" class="field" placeholder="Postal code" required />
+          </div>
+          <input v-model="shippingForm.country" class="field" placeholder="Country" required />
+          <p v-if="buyMessage" class="text-sm font-semibold" :class="buyError ? 'text-rose-300' : 'text-emerald-300'">
+            {{ buyMessage }}
+          </p>
+          <button class="premium-button" type="submit">Confirm Purchase</button>
+        </form>
+      </div>
+    </div>
+
     <div v-if="showCommissionModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/75 px-5">
       <div class="glass-panel w-full max-w-2xl rounded-2xl p-6">
         <div class="mb-6 flex items-center justify-between gap-4">
@@ -201,10 +234,10 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getArtworkById, placeBid, purchaseArtwork, setAutoBid } from '../services/artworkService'
+import { getProductById, placeBid, purchaseProduct, setAutoBid } from '../services/productService'
 import { addToWishlist, getUserProfile, removeFromWishlist } from '../services/userService'
 import { createCommission } from '../services/commissionService'
-import { getArtworkImageUrl } from '../utils/artworkImage'
+import { getProductImageUrl } from '../utils/productImage'
 import { formatCredits, getStoredSettings, toCredits } from '../utils/preferences'
 
 const route = useRoute()
@@ -221,6 +254,7 @@ const user = ref(null)
 const settings = ref(getStoredSettings())
 const isWishlisted = ref(false)
 const showCommissionModal = ref(false)
+const showShippingModal = ref(false)
 const commissionMessage = ref('')
 const commissionError = ref(false)
 const commissionForm = ref({
@@ -228,6 +262,16 @@ const commissionForm = ref({
   message: '',
   budget: '',
   deadline: '',
+})
+const shippingForm = ref({
+  fullName: '',
+  phone: '',
+  addressLine1: '',
+  addressLine2: '',
+  city: '',
+  state: '',
+  postalCode: '',
+  country: 'Malaysia',
 })
 
 const statusLabel = computed(() => {
@@ -239,6 +283,8 @@ const statusLabel = computed(() => {
 const minimumNextBid = computed(() => Number(artwork.value?.currentBid || 1) + 1)
 
 const priceHistory = computed(() => artwork.value?.priceHistory || [])
+
+const stockAvailable = computed(() => Number(artwork.value?.stockCount ?? 1) > 0)
 
 const priceChartPoints = computed(() => {
   if (priceHistory.value.length < 2) return ''
@@ -294,7 +340,7 @@ const handleAutoBid = async () => {
       storedUser.username,
       toCredits(autoBidMax.value)
     )
-    bidMessage.value = 'Auto bid is active for this artwork.'
+    bidMessage.value = 'Auto bid is active for this product.'
     bidError.value = false
     autoBidMax.value = ''
   } catch (error) {
@@ -315,11 +361,12 @@ const handlePurchase = async () => {
   buyError.value = false
 
   try {
-    const result = await purchaseArtwork(artwork.value._id, storedUser.username)
+    const result = await purchaseProduct(artwork.value._id, storedUser.username, shippingForm.value)
     artwork.value = result.artwork
     user.value = result.user
     localStorage.setItem('user', JSON.stringify(result.user))
-    buyMessage.value = `Purchased successfully. You can resell after ${formatDate(result.resaleAvailableAt)}.`
+    showShippingModal.value = false
+    buyMessage.value = 'Purchased successfully. The seller now has your shipping details.'
   } catch (error) {
     buyMessage.value = error.response?.data?.error || 'Purchase failed.'
     buyError.value = true
@@ -381,7 +428,7 @@ const formatDate = (date) => {
 
 onMounted(async () => {
   try {
-    artwork.value = await getArtworkById(route.params.id)
+    artwork.value = await getProductById(route.params.id)
     const storedUser = JSON.parse(localStorage.getItem('user'))
 
     if (storedUser?.username) {

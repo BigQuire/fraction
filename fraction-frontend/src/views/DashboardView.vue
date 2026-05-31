@@ -128,7 +128,7 @@
           <ArtworkGrid
             :artworks="activeBidArtworks"
             empty-title="No active bids"
-            empty-text="Start a bid from your collection when you are ready to auction a piece."
+            empty-text="Start a bid from your collection when you are ready to auction a product."
             show-actions
             @edit="openEditModal"
             @delete="handleDelete"
@@ -238,6 +238,34 @@
           </div>
         </section>
 
+        <section v-else-if="activeSection === 'orders'" class="space-y-5">
+          <article v-for="order in sellerOrders" :key="order.key" class="glass-panel rounded-2xl p-5">
+            <div class="flex flex-col justify-between gap-5 lg:flex-row lg:items-start">
+              <div>
+                <p class="text-sm font-bold uppercase tracking-[0.2em] text-amber-200">{{ order.status }}</p>
+                <h2 class="mt-2 text-2xl font-black text-white">{{ order.productTitle }}</h2>
+                <p class="mt-2 text-neutral-400">Buyer: {{ order.buyer }}</p>
+                <p class="mt-3 text-sm font-semibold text-amber-100">{{ formatCredits(order.price) }}</p>
+              </div>
+              <div class="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-neutral-300 lg:min-w-80">
+                <p class="font-black text-white">{{ order.shipping.fullName }}</p>
+                <p class="mt-2">{{ order.shipping.phone }}</p>
+                <p class="mt-2">{{ order.shipping.addressLine1 }}</p>
+                <p v-if="order.shipping.addressLine2">{{ order.shipping.addressLine2 }}</p>
+                <p>{{ order.shipping.city }}, {{ order.shipping.state }} {{ order.shipping.postalCode }}</p>
+                <p>{{ order.shipping.country }}</p>
+              </div>
+            </div>
+          </article>
+
+          <div v-if="!sellerOrders.length" class="glass-panel rounded-2xl p-10 text-center">
+            <h2 class="text-3xl font-black text-white">No orders yet</h2>
+            <p class="mx-auto mt-3 max-w-xl text-neutral-400">
+              Buyer shipping details will appear here after a product is purchased.
+            </p>
+          </div>
+        </section>
+
         <section v-else-if="activeSection === 'wishlist'" class="space-y-6">
           <div v-if="wishlistNotifications.length" class="glass-panel rounded-2xl p-5">
             <h2 class="text-2xl font-black text-white">Wishlist Notifications</h2>
@@ -253,6 +281,29 @@
             empty-title="Your wishlist is empty"
             empty-text="Add products from the detail page to watch sales, discounts, and bid activity."
           />
+        </section>
+
+        <section v-else-if="activeSection === 'purchases'" class="space-y-5">
+          <article v-for="purchase in user?.purchases || []" :key="purchase._id || purchase.createdAt" class="glass-panel rounded-2xl p-5">
+            <div class="flex flex-col justify-between gap-4 md:flex-row md:items-start">
+              <div>
+                <p class="text-sm font-bold uppercase tracking-[0.2em] text-amber-200">{{ purchase.shippingStatus }}</p>
+                <h2 class="mt-2 text-2xl font-black text-white">{{ purchase.title || purchase.product?.title }}</h2>
+                <p class="mt-2 text-neutral-400">Seller: {{ purchase.seller }}</p>
+              </div>
+              <div class="rounded-2xl border border-white/10 bg-white/5 p-4">
+                <p class="text-sm text-neutral-500">Paid</p>
+                <p class="text-xl font-black text-white">{{ formatCredits(purchase.price) }}</p>
+              </div>
+            </div>
+          </article>
+
+          <div v-if="!user?.purchases?.length" class="glass-panel rounded-2xl p-10 text-center">
+            <h2 class="text-3xl font-black text-white">No purchases yet</h2>
+            <p class="mx-auto mt-3 max-w-xl text-neutral-400">
+              Products you buy will appear here with their shipping status.
+            </p>
+          </div>
         </section>
 
         <section v-else-if="activeSection === 'giveaways'" class="space-y-5">
@@ -341,6 +392,7 @@
           <input v-model="editingArtwork.title" placeholder="Title" class="field" required />
           <textarea v-model="editingArtwork.description" placeholder="Description" class="field min-h-28" />
           <input v-model.number="editingArtwork.price" type="number" min="0" placeholder="Price" class="field" required />
+          <input v-model.number="editingArtwork.stockCount" type="number" min="0" placeholder="Stock count" class="field" required />
           <select v-model="editingArtwork.category" class="field">
             <option v-for="category in categories" :key="category">{{ category }}</option>
           </select>
@@ -373,6 +425,7 @@
           <input v-model="uploadForm.title" placeholder="Product title" class="field" required />
           <textarea v-model="uploadForm.description" placeholder="Description" class="field min-h-28" />
           <input v-model.number="uploadForm.price" type="number" min="0" placeholder="Price" class="field" required />
+          <input v-model.number="uploadForm.stockCount" type="number" min="1" placeholder="Stock count" class="field" required />
 
           <div class="grid gap-4 sm:grid-cols-2">
             <select v-model="uploadForm.category" class="field">
@@ -419,7 +472,7 @@
 import { computed, defineComponent, h, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import AdminView from './AdminView.vue'
-import { deleteArtwork, getOwnerArtworks, updateArtwork, uploadArtwork } from '../services/artworkService'
+import { deleteProduct, getOwnerProducts, updateProduct, uploadProduct } from '../services/productService'
 import { getArtistCommissions, updateCommissionStatus } from '../services/commissionService'
 import { getGiveaways, joinGiveaway } from '../services/giveawayService'
 import {
@@ -429,8 +482,8 @@ import {
   updateUserProfile,
   updateUserSettings,
 } from '../services/userService'
-import ArtworkCard from '../components/ArtworkCard.vue'
-import { getArtworkImageUrl } from '../utils/artworkImage'
+import ProductCard from '../components/ProductCard.vue'
+import { getProductImageUrl } from '../utils/productImage'
 import {
   applyTheme,
   categories,
@@ -461,14 +514,17 @@ const ArtworkGrid = defineComponent({
       return h('div', { class: 'grid grid-cols-1 gap-7 md:grid-cols-2 xl:grid-cols-3' },
         props.artworks.map((artwork) =>
           h('div', { class: 'relative', key: artwork._id }, [
-            h(ArtworkCard, {
+            h(ProductCard, {
               id: artwork._id,
-              image: getArtworkImageUrl(artwork.imageUrl),
+              image: getProductImageUrl(artwork.imageUrl),
               title: artwork.title,
               artist: artwork.artist,
               price: artwork.saleType === 'bid' ? artwork.currentBid || 1 : artwork.price,
               saleType: artwork.saleType,
             }),
+            h('div', {
+              class: 'pointer-events-none absolute left-3 top-3 z-10 rounded-full border border-white/10 bg-black/70 px-3 py-2 text-xs font-bold text-white backdrop-blur',
+            }, `Stock: ${artwork.stockCount ?? 1}`),
             props.showActions
               ? h('div', { class: 'absolute right-3 top-3 z-10 flex flex-wrap gap-2' }, [
                   h('button', {
@@ -536,7 +592,9 @@ const navItems = [
   { key: 'collection', label: 'Collection' },
   { key: 'bids', label: 'My Bids' },
   { key: 'commissions', label: 'Messages' },
+  { key: 'orders', label: 'Orders' },
   { key: 'wishlist', label: 'Wishlist' },
+  { key: 'purchases', label: 'Purchases' },
   { key: 'giveaways', label: 'Giveaways' },
   { key: 'profile', label: 'Profile' },
   { key: 'settings', label: 'Settings' },
@@ -551,6 +609,7 @@ const uploadForm = ref({
   sealed: false,
   authenticityNotes: '',
   saleType: 'sale',
+  stockCount: 1,
 })
 
 const activeBidArtworks = computed(() => artworks.value.filter((artwork) => artwork.saleType === 'bid' || artwork.saleType === 'both'))
@@ -560,6 +619,19 @@ const wishlistArtworks = computed(() => user.value?.wishlist || [])
 const wishlistNotifications = computed(() => {
   return wishlistArtworks.value.filter(
     (artwork) => artwork.discountPercent > 0 || artwork.saleType === 'bid' || artwork.saleType === 'both'
+  )
+})
+
+const sellerOrders = computed(() => {
+  return artworks.value.flatMap((artwork) =>
+    (artwork.purchaseHistory || []).map((purchase) => ({
+      key: `${artwork._id}-${purchase._id || purchase.createdAt}`,
+      productTitle: artwork.title,
+      buyer: purchase.buyer,
+      price: purchase.price,
+      status: purchase.status || 'pending-shipment',
+      shipping: purchase.shippingDetails || {},
+    }))
   )
 })
 
@@ -583,7 +655,9 @@ const sectionTitle = computed(() => {
     collection: 'My Uploaded Products',
     bids: 'Active Bids',
     commissions: 'Seller Messages',
+    orders: 'Orders',
     wishlist: 'Wishlist',
+    purchases: 'Purchases',
     giveaways: 'Giveaways',
     profile: 'Profile',
     settings: 'Settings',
@@ -622,7 +696,7 @@ const refreshUser = async () => {
 
 const refreshArtworks = async () => {
   if (!user.value?.username) return
-  artworks.value = await getOwnerArtworks(user.value.username)
+  artworks.value = await getOwnerProducts(user.value.username)
 }
 
 const refreshCommissions = async () => {
@@ -648,10 +722,10 @@ const joinEvent = async (id) => {
 
 const handleDelete = async (id) => {
   try {
-    await deleteArtwork(id)
+    await deleteProduct(id)
     artworks.value = artworks.value.filter((artwork) => artwork._id !== id)
   } catch (error) {
-    setActionMessage(error.response?.data?.error || 'Could not delete artwork.', true)
+    setActionMessage(error.response?.data?.error || 'Could not delete product.', true)
   }
 }
 
@@ -677,6 +751,7 @@ const resetUploadForm = () => {
     sealed: false,
     authenticityNotes: '',
     saleType: 'sale',
+    stockCount: 1,
   }
   selectedFile.value = null
 }
@@ -705,8 +780,9 @@ const handleUploadArtwork = async () => {
     formData.append('sealed', uploadForm.value.sealed)
     formData.append('authenticityNotes', uploadForm.value.authenticityNotes)
     formData.append('saleType', uploadForm.value.saleType)
+    formData.append('stockCount', uploadForm.value.stockCount)
 
-    await uploadArtwork(formData)
+    await uploadProduct(formData)
     await refreshArtworks()
     resetUploadForm()
     showUploadModal.value = false
@@ -753,11 +829,11 @@ const startAuction = async (artwork) => {
       bidEndTime: new Date(Date.now() + 24 * 60 * 60 * 1000),
     }
 
-    await updateArtwork(artwork._id, updatedArtwork)
+    await updateProduct(artwork._id, updatedArtwork)
     await refreshArtworks()
-    setActionMessage('Artwork listed for bidding.')
+    setActionMessage('Product listed for bidding.')
   } catch (error) {
-    setActionMessage(error.response?.data?.error || 'Could not list artwork for bidding.', true)
+    setActionMessage(error.response?.data?.error || 'Could not list product for bidding.', true)
   }
 }
 
@@ -801,12 +877,12 @@ const openEditModal = (artwork) => {
 
 const handleUpdate = async () => {
   try {
-    const updated = await updateArtwork(editingArtwork.value._id, editingArtwork.value)
+    const updated = await updateProduct(editingArtwork.value._id, editingArtwork.value)
     artworks.value = artworks.value.map((artwork) => artwork._id === updated._id ? updated : artwork)
     editingArtwork.value = null
-    setActionMessage('Artwork updated.')
+    setActionMessage('Product updated.')
   } catch (error) {
-    setActionMessage(error.response?.data?.error || 'Could not update artwork.', true)
+    setActionMessage(error.response?.data?.error || 'Could not update product.', true)
   }
 }
 

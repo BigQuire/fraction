@@ -2,7 +2,8 @@ import { createRouter, createWebHistory } from 'vue-router'
 
 import HomeView from '../views/HomeView.vue'
 import MarketplaceView from '../views/MarketplaceView.vue'
-import ArtworkDetailView from '../views/ArtworkDetailView.vue'
+import ProductDetailView from '../views/ProductDetailView.vue'
+import GachaView from '../views/GachaView.vue'
 import LoginView from '../views/LoginView.vue'
 import DashboardView from '../views/DashboardView.vue'
 import RegisterView from '@/views/RegisterView.vue'
@@ -21,9 +22,18 @@ const routes = [
     component: MarketplaceView,
   },
   {
+    path: '/product/:id',
+    name: 'product-detail',
+    component: ProductDetailView,
+  },
+  {
     path: '/artwork/:id',
-    name: 'artwork-detail',
-    component: ArtworkDetailView,
+    redirect: (to) => `/product/${to.params.id}`,
+  },
+  {
+    path: '/gacha',
+    name: 'gacha',
+    component: GachaView,
   },
   {
     path: '/login',

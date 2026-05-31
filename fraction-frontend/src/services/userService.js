@@ -40,6 +40,12 @@ export const addWalletBalance = async (username, amount) => {
   return response.data
 }
 
+export const spendWalletCredits = async (username, amount) => {
+
+  const response = await axios.put(`${API_URL}/${username}/wallet/spend`, { amount })
+  return response.data
+}
+
 export const updateUserProfile = async (username, profile) => {
 
   const response = await axios.put(`${API_URL}/${username}/profile`, profile)

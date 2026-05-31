@@ -1,6 +1,6 @@
 const API_ORIGIN = 'https://fraction-hfg4.onrender.com'
 
-export const getArtworkImageUrl = (imageUrl) => {
+export const getProductImageUrl = (imageUrl) => {
   if (!imageUrl) {
     return ''
   }
@@ -11,3 +11,5 @@ export const getArtworkImageUrl = (imageUrl) => {
 
   return `${API_ORIGIN}/uploads/${imageUrl}`
 }
+
+export const getArtworkImageUrl = getProductImageUrl

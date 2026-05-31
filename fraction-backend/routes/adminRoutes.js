@@ -1,7 +1,7 @@
 const express = require('express')
 const router = express.Router()
 
-const Artwork = require('../models/Artwork')
+const Product = require('../models/Product')
 const Giveaway = require('../models/Giveaway')
 const User = require('../models/User')
 
@@ -33,7 +33,7 @@ router.post('/login', (req, res) => {
 
 router.get('/products', requireAdmin, async (req, res) => {
   try {
-    const products = await Artwork.find().sort({ createdAt: -1 })
+    const products = await Product.find().sort({ createdAt: -1 })
     res.status(200).json(products)
   } catch (error) {
     res.status(500).json({ error: error.message })
@@ -42,7 +42,7 @@ router.get('/products', requireAdmin, async (req, res) => {
 
 router.put('/products/:id/remove', requireAdmin, async (req, res) => {
   try {
-    const product = await Artwork.findByIdAndUpdate(
+    const product = await Product.findByIdAndUpdate(
       req.params.id,
       {
         removedByAdmin: true,

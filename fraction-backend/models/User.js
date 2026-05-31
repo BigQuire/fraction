@@ -46,6 +46,17 @@ const userSchema = new mongoose.Schema({
 
   wishlist: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Artwork' }],
 
+  purchases: [
+    {
+      product: { type: mongoose.Schema.Types.ObjectId, ref: 'Artwork' },
+      title: { type: String, default: '' },
+      seller: { type: String, default: '' },
+      price: { type: Number, default: 0 },
+      shippingStatus: { type: String, default: 'pending-shipment' },
+      createdAt: { type: Date, default: Date.now },
+    },
+  ],
+
   createdAt: { type: Date, default: Date.now, },
 
   artworkNumbers: { type: Number, default: 0, },

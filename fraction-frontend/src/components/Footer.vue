@@ -4,6 +4,7 @@
       <p>Copyright 2026 Fraction. All rights reserved.</p>
       <div class="flex gap-5 text-neutral-400">
         <router-link to="/marketplace" class="transition hover:text-white">Marketplace</router-link>
+        <router-link to="/gacha" class="transition hover:text-white">Gacha</router-link>
         <router-link to="/dashboard" class="transition hover:text-white">Dashboard</router-link>
       </div>
     </div>

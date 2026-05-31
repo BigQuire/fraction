@@ -11,7 +11,7 @@
         </div>
         <div class="glass-panel rounded-2xl px-5 py-4">
           <p class="text-sm text-neutral-500">Showing</p>
-          <p class="text-2xl font-black text-white">{{ filteredArtworks.length }} pieces</p>
+          <p class="text-2xl font-black text-white">{{ filteredArtworks.length }} products</p>
         </div>
       </div>
 
@@ -81,10 +81,10 @@
           </div>
 
           <div v-else-if="filteredArtworks.length" class="grid grid-cols-1 gap-7 sm:grid-cols-2 xl:grid-cols-3">
-            <ArtworkCard
+            <ProductCard
               v-for="artwork in filteredArtworks"
               :key="artwork._id"
-              :image="getArtworkImageUrl(artwork.imageUrl)"
+              :image="getProductImageUrl(artwork.imageUrl)"
               :title="artwork.title"
               :artist="artwork.artist"
               :price="displayPrice(artwork)"
@@ -104,11 +104,11 @@
 </template>
 
 <script setup>
-import ArtworkCard from '../components/ArtworkCard.vue'
+import ProductCard from '../components/ProductCard.vue'
 import { ref, onMounted, computed } from 'vue'
 
-import { getArtworks } from '../services/artworkService'
-import { getArtworkImageUrl } from '../utils/artworkImage'
+import { getProducts } from '../services/productService'
+import { getProductImageUrl } from '../utils/productImage'
 import { categories, formatCredits } from '../utils/preferences'
 
 const artworks = ref([])
@@ -121,7 +121,7 @@ const isLoading = ref(true)
 
 onMounted(async () => {
   try {
-    artworks.value = await getArtworks()
+    artworks.value = await getProducts()
   } catch (error) {
     console.error(error)
   } finally {
@@ -138,7 +138,9 @@ const isMarketplaceListing = (artwork) => {
   const cooldownActive =
     artwork.resaleAvailableAt && new Date(artwork.resaleAvailableAt) > new Date()
 
-  return listedSaleTypes.includes(artwork.saleType) && !cooldownActive
+  const stockAvailable = Number(artwork.stockCount ?? 1) > 0
+
+  return listedSaleTypes.includes(artwork.saleType) && !cooldownActive && stockAvailable
 }
 
 const resetFilters = () => {
