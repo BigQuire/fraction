@@ -82,9 +82,13 @@ const navItems = [
 ]
 
 const user = computed(() => {
-  return JSON.parse(
-    localStorage.getItem('user')
-  )
+  $route.fullPath
+
+  try {
+    return JSON.parse(localStorage.getItem('user') || 'null')
+  } catch {
+    return null
+  }
 })
 
 const userInitial = computed(() => {

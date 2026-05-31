@@ -6,7 +6,6 @@ import ArtworkDetailView from '../views/ArtworkDetailView.vue'
 import LoginView from '../views/LoginView.vue'
 import DashboardView from '../views/DashboardView.vue'
 import RegisterView from '@/views/RegisterView.vue'
-import AdminView from '../views/AdminView.vue'
 import ReviewsView from '../views/ReviewsView.vue'
 import SellerProfileView from '../views/SellerProfileView.vue'
 
@@ -54,7 +53,7 @@ const routes = [
   {
     path: '/admin',
     name: 'admin',
-    component: AdminView,
+    redirect: '/dashboard',
   }
 ]
 

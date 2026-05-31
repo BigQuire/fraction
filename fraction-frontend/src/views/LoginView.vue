@@ -49,7 +49,7 @@
             </router-link>
           </p>
           <p class="mt-4 rounded-2xl border border-amber-200/20 bg-amber-200/10 p-4 text-center text-xs font-semibold text-amber-100">
-            Lecturer admin demo: admin@fraction.test / admin123
+            admin@fraction.test / admin123
           </p>
         </div>
       </div>
@@ -80,9 +80,22 @@ const handleLogin = async () => {
         email: email.value,
         password: password.value,
       })
+      const adminUser = {
+        username: 'admin',
+        email: email.value,
+        role: 'admin',
+        profile: {
+          displayName: 'Platform Admin',
+          location: 'Fraction HQ',
+        },
+        walletBalance: 0,
+        netWorth: 0,
+        tickets: 0,
+      }
+
       localStorage.setItem('admin-token', response.token)
-      localStorage.removeItem('user')
-      router.push('/admin')
+      localStorage.setItem('user', JSON.stringify(adminUser))
+      router.push('/dashboard')
       return
     }
 

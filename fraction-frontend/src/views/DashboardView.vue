@@ -1,5 +1,6 @@
 <template>
-  <main class="min-h-screen bg-black/20">
+  <AdminView v-if="isAdminUser" />
+  <main v-else class="min-h-screen bg-black/20">
     <div class="page-shell grid gap-8 py-10 lg:grid-cols-[260px_1fr]">
       <aside class="glass-panel h-fit rounded-2xl p-4 lg:sticky lg:top-28">
         <div class="mb-6 flex items-center gap-3 px-2">
@@ -417,6 +418,7 @@
 <script setup>
 import { computed, defineComponent, h, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import AdminView from './AdminView.vue'
 import { deleteArtwork, getOwnerArtworks, updateArtwork, uploadArtwork } from '../services/artworkService'
 import { getArtistCommissions, updateCommissionStatus } from '../services/commissionService'
 import { getGiveaways, joinGiveaway } from '../services/giveawayService'
@@ -562,6 +564,15 @@ const wishlistNotifications = computed(() => {
 })
 
 const userInitial = computed(() => user.value?.username?.charAt(0)?.toUpperCase() || 'U')
+
+const isAdminUser = computed(() => {
+  try {
+    const storedUser = JSON.parse(localStorage.getItem('user') || 'null')
+    return storedUser?.role === 'admin'
+  } catch {
+    return false
+  }
+})
 
 const activeLabel = computed(() => navItems.find((item) => item.key === activeSection.value)?.label || 'Dashboard')
 
@@ -814,10 +825,13 @@ const saveProfile = async () => {
 
 const handleLogout = () => {
   localStorage.removeItem('user')
+  localStorage.removeItem('admin-token')
   router.push('/login')
 }
 
 onMounted(async () => {
+  if (isAdminUser.value) return
+
   const storedUser = localStorage.getItem('user')
 
   if (!storedUser) {

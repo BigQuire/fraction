@@ -1,7 +1,7 @@
 <template>
   <main class="page-shell min-h-screen py-12">
     <div class="mb-10">
-      <p class="text-sm font-bold uppercase tracking-[0.28em] text-amber-200">Admin</p>
+      <p class="text-sm font-bold uppercase tracking-[0.28em] text-amber-200">Admin Dashboard</p>
       <h1 class="mt-3 text-5xl font-black text-white">Collectibles Platform Control</h1>
     </div>
 
@@ -78,7 +78,15 @@ const giveaway = ref({
   ticketCost: 1,
 })
 
-const isAdmin = computed(() => Boolean(localStorage.getItem('admin-token')))
+const storedUser = computed(() => {
+  try {
+    return JSON.parse(localStorage.getItem('user') || 'null')
+  } catch {
+    return null
+  }
+})
+
+const isAdmin = computed(() => storedUser.value?.role === 'admin' && Boolean(localStorage.getItem('admin-token')))
 
 const loadAdminData = async () => {
   if (!isAdmin.value) return
